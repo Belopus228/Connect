@@ -1,9 +1,6 @@
   Determining projects to restore...
-  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 8.01 sec).
-D:\a\Connect\Connect\pc\MainWindow.xaml.cs(117,49): error CS1061: 'CompDef' does not contain a definition for 'SubTitle' and no accessible extension method 'SubTitle' accepting a first argument of type 'CompDef' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\MainWindow.xaml.cs(117,74): error CS1061: 'CompDef' does not contain a definition for 'SubTitle' and no accessible extension method 'SubTitle' accepting a first argument of type 'CompDef' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\MainWindow.xaml.cs(117,99): error CS1061: 'CompDef' does not contain a definition for 'SubTitle' and no accessible extension method 'SubTitle' accepting a first argument of type 'CompDef' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\MainWindow.xaml.cs(123,37): error CS1061: 'ProjectData' does not contain a definition for 'AddNext' and no accessible extension method 'AddNext' accepting a first argument of type 'ProjectData' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\MainWindow.xaml.cs(338,41): error CS1503: Argument 1: cannot convert from 'string' to 'int' [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\MainWindow.xaml.cs(352,77): error CS1061: 'List<FirmwareExample>' does not contain a definition for 'TryGetValue' and no accessible extension method 'TryGetValue' accepting a first argument of type 'List<FirmwareExample>' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-PUBLISH_EXIT=1
+  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 7.34 sec).
+  ConnectPC -> D:\a\Connect\Connect\pc\bin\Release\net8.0-windows\win-x64\ConnectPC.dll
+  ConnectPC -> D:\a\Connect\Connect\pc-out\
+PUBLISH_EXIT=0
+EXE_SIZE_BYTES=71662373
