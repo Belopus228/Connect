@@ -114,16 +114,19 @@ public sealed class BoardView : FrameworkElement
                 ActualWidth / 2 + Pan.X + (xr - yr) * Cell * Zoom,
                 ActualHeight / 2 + Pan.Y + ((xr + yr) * Tilt - wz) * Cell * Zoom), w);
         }
-        // Настоящий 3D: поворот по азимуту -> подъём камеры -> деление на глубину.
-        double el = Math.Atan(Math.Max(Tilt, 0.14));
+        // Настоящий 3D на базисе камеры: right / up / back.
+        // Ближний край платы (низ экрана) ОБЯЗАН быть ближе к камере и крупнее.
+        double el = Math.Atan(Math.Max(Tilt, 0.10) * 1.4142);
         double sinE = Math.Sin(el), cosE = Math.Cos(el);
-        double xv = xr;                                   // вправо от камеры
-        double yv = wz * cosE - yr * sinE;                // вверх от камеры
-        double zv = wz * sinE + yr * cosE + 70.0;         // глубина (камера в 70 клетках)
-        double f = Cell * Zoom * 90.0;                    // фокус
+        const double SQ = 0.70710678; // 1/sqrt(2)
+        double xv = (xr - yr) * SQ;                              // вправо
+        double yv = -(xr + yr) * SQ * sinE + wz * cosE;          // вверх
+        double zv = 80.0 - (xr + yr) * SQ * cosE - wz * sinE;    // глубина: меньше = ближе
+        double f = Cell * Zoom * 105.0;                          // фокус
+        // Depth: чем больше — тем ближе к камере (дальние грани рисуем первыми)
         return (new Point(
             ActualWidth / 2 + Pan.X + xv * f / zv,
-            ActualHeight / 2 + Pan.Y - yv * f / zv), zv);
+            ActualHeight / 2 + Pan.Y - yv * f / zv), -zv);
     }
 
     public (double, double) Unproject(Point s) =>
@@ -131,14 +134,17 @@ public sealed class BoardView : FrameworkElement
 
     private (double, double) UnprojectPerspective(Point s)
     {
-        double el = Math.Atan(Math.Max(Tilt, 0.14));
+        double el = Math.Atan(Math.Max(Tilt, 0.10) * 1.4142);
         double sinE = Math.Sin(el);
-        double f = Cell * Zoom * 90.0;
+        double f = Cell * Zoom * 105.0;
         double mx = s.X - ActualWidth / 2 - Pan.X;
         double my = s.Y - ActualHeight / 2 - Pan.Y;
-        double zv = 70.0 / Math.Max(0.2, 1 - my / (f * Math.Tan(el)));
-        double xr = mx * zv / f;
-        double yr = my * zv / (f * sinE);
+        const double SQ = 0.70710678;
+        double zv = 80.0 / Math.Max(0.2, 1 + my / (f * Math.Tan(el)));
+        double s1 = 1.4142 * mx * zv / f;         // xr - yr
+        double s2 = 1.4142 * my * zv / (f * sinE); // xr + yr
+        double xr = (s2 + s1) / 2;
+        double yr = (s2 - s1) / 2;
         double a = CameraAngle * Math.PI / 180.0;
         double dx = xr * Math.Cos(a) + yr * Math.Sin(a);
         double dy = -xr * Math.Sin(a) + yr * Math.Cos(a);
