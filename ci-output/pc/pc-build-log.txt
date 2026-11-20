@@ -1,10 +1,10 @@
-299 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.10
-299 INFO: Python: 3.12.10
-323 INFO: Platform: Windows-2025Server-10.0.26100-SP0
-323 INFO: Python environment: C:\hostedtoolcache\windows\Python\3.12.10\x64
-324 INFO: wrote D:\a\Connect\Connect\pc\Connect-PC.spec
-330 INFO: Removing temporary files and cleaning cache in C:\Users\runneradmin\AppData\Local\pyinstaller
-331 INFO: Module search paths (PYTHONPATH):
+309 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.10
+309 INFO: Python: 3.12.10
+344 INFO: Platform: Windows-2025Server-10.0.26100-SP0
+344 INFO: Python environment: C:\hostedtoolcache\windows\Python\3.12.10\x64
+345 INFO: wrote D:\a\Connect\Connect\pc\Connect-PC.spec
+351 INFO: Removing temporary files and cleaning cache in C:\Users\runneradmin\AppData\Local\pyinstaller
+353 INFO: Module search paths (PYTHONPATH):
 ['D:\\a\\Connect\\Connect\\pc',
  'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python312.zip',
  'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\DLLs',
@@ -12,54 +12,54 @@
  'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64',
  'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages',
  'D:\\a\\Connect\\Connect\\pc']
-543 INFO: checking Analysis
-543 INFO: Building Analysis because Analysis-00.toc is non existent
-543 INFO: Looking for Python shared library...
-543 INFO: Using Python shared library: C:\hostedtoolcache\windows\Python\3.12.10\x64\python312.dll
-543 INFO: Running Analysis Analysis-00.toc
-543 INFO: Target bytecode optimization level: 0
-543 INFO: Initializing module dependency graph...
-551 INFO: Initializing module graph hook caches...
-562 INFO: Analyzing modules for base_library.zip ...
-1567 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-1879 INFO: Processing standard module hook 'hook-math.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-2768 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-3616 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-4015 INFO: Caching module dependency graph...
-4043 INFO: Analyzing D:\a\Connect\Connect\pc\ConnectPC.py
-4134 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
-4134 INFO: TclTkInfo: initializing cached Tcl/Tk info...
-5113 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-5180 INFO: Processing module hooks (post-graph stage)...
-5183 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
-5196 INFO: Performing binary vs. data reclassification (927 entries)
-5794 INFO: Looking for ctypes DLLs
-5798 INFO: Analyzing run-time hooks ...
-5798 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
-5800 INFO: Including run-time hook 'pyi_rth__tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
-5824 INFO: Creating base_library.zip...
-5843 INFO: Looking for dynamic libraries
-5943 INFO: Extra DLL search directories (AddDllDirectory): []
-5943 INFO: Extra DLL search directories (PATH): []
-6452 INFO: Warnings written to D:\a\Connect\Connect\pc\build\Connect-PC\warn-Connect-PC.txt
-6465 INFO: Graph cross-reference written to D:\a\Connect\Connect\pc\build\Connect-PC\xref-Connect-PC.html
-6491 INFO: checking PYZ
-6491 INFO: Building PYZ because PYZ-00.toc is non existent
-6491 INFO: Building PYZ (ZlibArchive) D:\a\Connect\Connect\pc\build\Connect-PC\PYZ-00.pyz
-6639 INFO: Building PYZ (ZlibArchive) D:\a\Connect\Connect\pc\build\Connect-PC\PYZ-00.pyz completed successfully.
-6664 INFO: checking PKG
-6664 INFO: Building PKG because PKG-00.toc is non existent
-6664 INFO: Building PKG (CArchive) Connect-PC.pkg
-12367 INFO: Building PKG (CArchive) Connect-PC.pkg completed successfully.
-12387 INFO: Bootloader C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
-12387 INFO: checking EXE
-12387 INFO: Building EXE because EXE-00.toc is non existent
-12387 INFO: Building EXE from EXE-00.toc
-12387 INFO: Copying bootloader EXE to D:\a\Connect\Connect\pc\dist\Connect-PC.exe
-12391 INFO: Copying icon to EXE
-12393 INFO: Copying 0 resources to EXE
-12393 INFO: Embedding manifest in EXE
-12395 INFO: Appending PKG archive to EXE
-12403 INFO: Fixing EXE headers
-12497 INFO: Building EXE from EXE-00.toc completed successfully.
-12512 INFO: Build complete! The results are available in: D:\a\Connect\Connect\pc\dist
+619 INFO: checking Analysis
+619 INFO: Building Analysis because Analysis-00.toc is non existent
+619 INFO: Looking for Python shared library...
+619 INFO: Using Python shared library: C:\hostedtoolcache\windows\Python\3.12.10\x64\python312.dll
+619 INFO: Running Analysis Analysis-00.toc
+620 INFO: Target bytecode optimization level: 0
+620 INFO: Initializing module dependency graph...
+629 INFO: Initializing module graph hook caches...
+648 INFO: Analyzing modules for base_library.zip ...
+1939 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
+2332 INFO: Processing standard module hook 'hook-math.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
+3724 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
+5015 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
+5583 INFO: Caching module dependency graph...
+5636 INFO: Analyzing D:\a\Connect\Connect\pc\ConnectPC.py
+5764 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+5765 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+6859 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
+6946 INFO: Processing module hooks (post-graph stage)...
+6953 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks'
+6974 INFO: Performing binary vs. data reclassification (927 entries)
+7609 INFO: Looking for ctypes DLLs
+7613 INFO: Analyzing run-time hooks ...
+7615 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+7617 INFO: Including run-time hook 'pyi_rth__tkinter.py' from 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+7644 INFO: Creating base_library.zip...
+7668 INFO: Looking for dynamic libraries
+7812 INFO: Extra DLL search directories (AddDllDirectory): []
+7812 INFO: Extra DLL search directories (PATH): []
+8471 INFO: Warnings written to D:\a\Connect\Connect\pc\build\Connect-PC\warn-Connect-PC.txt
+8487 INFO: Graph cross-reference written to D:\a\Connect\Connect\pc\build\Connect-PC\xref-Connect-PC.html
+8522 INFO: checking PYZ
+8522 INFO: Building PYZ because PYZ-00.toc is non existent
+8522 INFO: Building PYZ (ZlibArchive) D:\a\Connect\Connect\pc\build\Connect-PC\PYZ-00.pyz
+8698 INFO: Building PYZ (ZlibArchive) D:\a\Connect\Connect\pc\build\Connect-PC\PYZ-00.pyz completed successfully.
+8729 INFO: checking PKG
+8729 INFO: Building PKG because PKG-00.toc is non existent
+8729 INFO: Building PKG (CArchive) Connect-PC.pkg
+12800 INFO: Building PKG (CArchive) Connect-PC.pkg completed successfully.
+12828 INFO: Bootloader C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+12828 INFO: checking EXE
+12828 INFO: Building EXE because EXE-00.toc is non existent
+12828 INFO: Building EXE from EXE-00.toc
+12828 INFO: Copying bootloader EXE to D:\a\Connect\Connect\pc\dist\Connect-PC.exe
+12832 INFO: Copying icon to EXE
+12834 INFO: Copying 0 resources to EXE
+12834 INFO: Embedding manifest in EXE
+12836 INFO: Appending PKG archive to EXE
+12844 INFO: Fixing EXE headers
+12947 INFO: Building EXE from EXE-00.toc completed successfully.
+12969 INFO: Build complete! The results are available in: D:\a\Connect\Connect\pc\dist
