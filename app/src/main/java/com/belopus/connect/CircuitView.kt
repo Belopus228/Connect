@@ -167,7 +167,7 @@ class CircuitView @JvmOverloads constructor(
                 paint.color = if (powered && AppState.running) Color.parseColor("#69F0AE") else Color.parseColor("#546E7A")
                 canvas.drawCircle(r.right - 14f, r.top + 14f, 7f, paint)
             }
-            "oled", "tft", "lcd1602" -> {
+            "oled", "tft", "tft18", "lcd1602" -> {
                 paint.color = if (c.typeId == "lcd1602") Color.parseColor("#9CCC65") else Color.BLACK
                 val scr = RectF(r.left + 8f, r.top + cell * 1.2f, r.right - 8f, r.bottom - 8f)
                 canvas.drawRoundRect(scr, 6f, 6f, paint)

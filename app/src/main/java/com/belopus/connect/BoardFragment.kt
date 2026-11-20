@@ -10,6 +10,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.CheckBox
+import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -21,6 +23,7 @@ import androidx.fragment.app.Fragment
 class BoardFragment : Fragment() {
 
     private var circuitView: CircuitView? = null
+    private var sceneView: Scene3DView? = null
     private var infoText: TextView? = null
     private var modeButtons = mutableListOf<Button>()
     private val listener: () -> Unit = { refreshInfo() }
@@ -39,6 +42,7 @@ class BoardFragment : Fragment() {
             setPadding(dp(6), dp(6), dp(6), dp(2))
         }
         val modes = listOf(
+            "camera" to "🎥 Камера",
             "move" to "✥ Двигать",
             "wire" to "🔌 Провод",
             "solder" to "🔥 Паять",
@@ -54,14 +58,16 @@ class BoardFragment : Fragment() {
                 setOnClickListener {
                     AppState.mode = key
                     circuitView?.clearPending()
+                    sceneView?.clearPending()
                     highlightModes()
                     Toast.makeText(
                         requireContext(), when (key) {
+                            "camera" -> "Камера 3D: ведите палец — вращение, щипок двумя пальцами — зум"
                             "wire" -> "Провод: коснитесь пина → затем второго пина"
                             "solder" -> "Пайка: коснитесь пина → затем второго (дорожка + припой)"
                             "delete" -> "Коснитесь детали, чтобы удалить"
                             "sim" -> "Симуляция: нажимайте кнопки на плате, крутите потенциометр"
-                            else -> "Перетаскивайте детали по плате"
+                            else -> "Перетаскивайте детали по плате (в 3D — пальцем по детали)"
                         }, Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -118,15 +124,94 @@ class BoardFragment : Fragment() {
         boardRow.addView(clearWires)
         root.addView(boardRow)
 
-        // скролл платы
-        val scroll = ScrollView(requireContext()).apply {
+        // переключатель 3D / 2D и ракурсы камеры
+        val viewRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(6), dp(4), dp(6), dp(2))
+        }
+        val btn3d = Button(requireContext()).apply {
+            text = "🧊 3D"
+            textSize = 12f
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val btn2d = Button(requireContext()).apply {
+            text = "▦ 2D"
+            textSize = 12f
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        viewRow.addView(btn3d); viewRow.addView(btn2d)
+        for ((label, viewName) in listOf("Изометрия" to "iso", "Сверху" to "top", "Спереди" to "front", "Сбоку" to "side")) {
+            viewRow.addView(Button(requireContext()).apply {
+                text = label; textSize = 10f
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                setOnClickListener {
+                    btn3d.performClick()
+                    sceneView?.setView(viewName)
+                    AppState.mode = "camera"
+                    highlightModes()
+                }
+            })
+        }
+        root.addView(viewRow)
+
+        val caseCb = CheckBox(requireContext()).apply {
+            text = "📦 Показать STL-корпус в 3D-сцене"
+            textSize = 12f
+            isChecked = AppState.showCaseIn3D
+        }
+        root.addView(caseCb)
+
+        // область платы: 3D-сцена (основная) или 2D-плата
+        val stage = FrameLayout(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+        }
+        val scene = Scene3DView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        }
+        sceneView = scene
+        scene.onComponentMoved = { AppState.save(requireContext()) }
+        stage.addView(scene)
+
+        val scroll = ScrollView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         }
         val cv = CircuitView(requireContext())
         circuitView = cv
         cv.onComponentMoved = { AppState.save(requireContext()) }
         scroll.addView(cv)
-        root.addView(scroll)
+        stage.addView(scroll)
+        root.addView(stage)
+
+        fun applyStageVisibility() {
+            scene.visibility = if (AppState.board3d) View.VISIBLE else View.GONE
+            scroll.visibility = if (AppState.board3d) View.GONE else View.VISIBLE
+            btn3d.setBackgroundColor(Color.parseColor(if (AppState.board3d) "#BBDEFB" else "#ECEFF1"))
+            btn2d.setBackgroundColor(Color.parseColor(if (AppState.board3d) "#ECEFF1" else "#BBDEFB"))
+            scene.invalidate(); cv.invalidate()
+        }
+        btn3d.setOnClickListener {
+            AppState.board3d = true
+            if (AppState.mode == "move") AppState.mode = "camera"
+            highlightModes()
+            applyStageVisibility()
+            Toast.makeText(requireContext(), "3D-вид: режим «Камера» — вращение пальцем, зум щипком", Toast.LENGTH_SHORT).show()
+        }
+        btn2d.setOnClickListener {
+            AppState.board3d = false
+            if (AppState.mode == "camera") AppState.mode = "move"
+            highlightModes()
+            applyStageVisibility()
+        }
+        caseCb.setOnCheckedChangeListener { _, checked ->
+            AppState.showCaseIn3D = checked
+            if (checked && AppState.caseModel == null) {
+                Toast.makeText(requireContext(), "Сначала выберите корпус во вкладке «Корпус» (импорт STL или готовый)", Toast.LENGTH_LONG).show()
+            }
+            if (checked) AppState.board3d = true
+            applyStageVisibility()
+            scene.invalidate()
+        }
+        applyStageVisibility()
 
         // палитра быстрых деталей
         root.addView(TextView(requireContext()).apply {
@@ -188,7 +273,7 @@ class BoardFragment : Fragment() {
         }
         panel.addView(actions)
         val hint = TextView(requireContext()).apply {
-            text = "💡 Как паять: режим «Паять» → пин батареи «+» → пин ESP «VIN», потом «−» → «GND». Светодиод: ESP D13 → резистор → LED(A), LED(K) → GND."
+            text = "💡 3D (основной вид): «🎥 Камера» — вращение/зум, детали — объёмные, провода — дугами, включите ☑ выше, чтобы видеть STL-корпус в сцене. Паять: режим «Паять» → пин батареи «+» → ESP «VIN», «−» → «GND». LED: D13 → резистор → LED(A), LED(K) → GND."
             textSize = 11f; setTextColor(Color.parseColor("#546E7A"))
         }
         panel.addView(hint)
@@ -202,7 +287,7 @@ class BoardFragment : Fragment() {
     private fun toastSel() = Toast.makeText(requireContext(), "Сначала коснитесь детали на плате", Toast.LENGTH_SHORT).show()
 
     private fun highlightModes() {
-        val modes = listOf("move", "wire", "solder", "delete", "sim")
+        val modes = listOf("camera", "move", "wire", "solder", "delete", "sim")
         modeButtons.forEachIndexed { i, b ->
             b.setBackgroundColor(if (AppState.mode == modes[i]) Color.parseColor("#BBDEFB") else Color.parseColor("#ECEFF1"))
         }
@@ -265,6 +350,7 @@ class BoardFragment : Fragment() {
             t.text = "Выбрано: ${c.def().title} (${c.gridX},${c.gridY}) пов.${c.rotation}°${if (c.insideCase) " • в корпусе" else ""}$props$extra"
         }
         circuitView?.invalidate()
+        sceneView?.invalidate()
     }
 
     override fun onDestroyView() {

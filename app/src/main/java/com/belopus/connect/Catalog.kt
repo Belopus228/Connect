@@ -40,6 +40,16 @@ object Catalog {
             mapOf("displayText" to "TFT 320x240")
         ),
         CompDef(
+            "tft18", "TFT 1.8\" ST7735 128×160", "Цветной TFT-дисплей 1.8 дюйма (ST7735, 128×160), SPI: VCC,GND,SCK,SDA(MOSI),RES,DC,CS,BL(подсветка). В прошивке: tft.print(\"...\"), tft.clear(). Виден и в 2D, и в 3D.",
+            13, 20, 11f, Color.parseColor("#B71C1C"),
+            pins(
+                Triple("VCC", 1, 19), Triple("GND", 3, 19), Triple("SCK", 5, 19),
+                Triple("SDA", 6, 19), Triple("RES", 8, 19), Triple("DC", 9, 19),
+                Triple("CS", 11, 19), Triple("BL", 12, 19)
+            ),
+            mapOf("displayText" to "TFT 1.8 128x160")
+        ),
+        CompDef(
             "lcd1602", "LCD 1602", "Текстовый дисплей 16×2, параллельный интерфейс.",
             18, 6, 12f, Color.parseColor("#1B5E20"),
             pins(

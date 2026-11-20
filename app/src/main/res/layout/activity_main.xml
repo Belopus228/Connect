@@ -24,7 +24,7 @@
             android:id="@+id/headerStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ESP32 • макетная плата • пайка • STL-корпус"
+            android:text="3D: ESP32 • плата • пайка • TFT 1.8 • STL-корпус"
             android:textColor="#BBDEFB"
             android:textSize="12sp" />
     </LinearLayout>

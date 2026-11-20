@@ -103,6 +103,19 @@ digitalWrite(13, LOW);
 delay(800);
 """
 
+    const val TFT18 = """// === TFT 1.8" ST7735 128x160 ===
+pinMode(13, OUTPUT);
+tft.clear();
+tft.print("TFT 1.8 OK!");
+Serial.println("TFT 1.8: кадр выведен");
+digitalWrite(13, HIGH);
+delay(900);
+tft.print("Connect 3D :)");
+Serial.println("TFT 1.8: второй кадр");
+digitalWrite(13, LOW);
+delay(900);
+"""
+
     const val NRF_SEND = """// === nRF24L01: передатчик ===
 pinMode(13, OUTPUT);
 nrf.send("PING от ESP32");
@@ -136,6 +149,7 @@ digitalWrite(14, LOW);
         "💡 Blink — светодиод D13" to BLINK,
         "🔘 Кнопка управляет LED" to BUTTON_LED,
         "🖥 OLED: Привет, Connect!" to OLED_HELLO,
+        "📺 TFT 1.8 ST7735" to TFT18,
         "📡 nRF24L01 передатчик" to NRF_SEND,
         "🚦 Светофор (3 LED)" to TRAFFIC
     )

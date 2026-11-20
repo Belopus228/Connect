@@ -164,6 +164,7 @@ class FirmwareFragment : Fragment() {
 • delay(500);
 • Serial.println("текст");
 • oled.print("текст");  oled.clear();
+• tft.print("текст");  tft.clear();   // TFT 1.8" ST7735 и TFT 2.4"
 • nrf.send("пакет");
 • servo.write(90);
 Номер в коде = номер D-пина ESP32 (13 → D13, 32 → D32).

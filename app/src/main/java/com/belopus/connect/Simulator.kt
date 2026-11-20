@@ -12,7 +12,9 @@ object AppState {
     var project: Project = Project()
     var selectedId: String? = null
     var running: Boolean = false
-    var mode: String = "move" // move | wire | solder | delete | sim
+    var mode: String = "move" // move | wire | solder | delete | sim | camera
+    var board3d: Boolean = true
+    var showCaseIn3D: Boolean = false
     var caseModel: StlModel? = null
     var casePresetName: String = ""
 
@@ -482,6 +484,8 @@ class FirmwareRunner(private val code: String) {
         val serialRe2 = Regex("""Serial\.print\s*\(\s*"([^"]*)"\s*\)""")
         val oledRe = Regex("""(?:oled|display|lcd)\.print(?:ln)?\s*\(\s*"([^"]*)"\s*\)""")
         val oledClearRe = Regex("""(?:oled|display|lcd)\.clear\s*\(\s*\)""")
+        val tftRe = Regex("""tft\.print(?:ln)?\s*\(\s*"([^"]*)"\s*\)""")
+        val tftClearRe = Regex("""tft\.clear\s*\(\s*\)""")
         val nrfRe = Regex("""nrf\.send\s*\(\s*"([^"]*)"\s*\)""")
         val servoRe = Regex("""servo\.write\s*\(\s*(\d+)\s*\)""")
         val ifRe = Regex("""if\s*\(\s*digitalRead\s*\(\s*(\w+)\s*\)\s*==\s*(\w+)\s*\)""")
@@ -493,27 +497,19 @@ class FirmwareRunner(private val code: String) {
             if (line.startsWith("} else") || line.startsWith("else")) { out.add(Instr("ELSE")); continue }
             if (line == "}" || line == "};") { out.add(Instr("ENDIF")); continue }
             line = line.removeSuffix(";").trim()
-            val mIf = ifRe.find(line)
-            val mPin = if (mIf == null) pinModeRe.find(line) else null
-            val mWrite = if (mIf == null && mPin == null) writeRe.find(line) else null
-            val mDelay = if (mIf == null && mPin == null && mWrite == null) delayRe.find(line) else null
-            val mSerial = if (mIf == null && mPin == null && mWrite == null && mDelay == null) (serialRe.find(line) ?: serialRe2.find(line)) else null
-            val mOledClear = if (mSerial == null && mIf == null && mPin == null && mWrite == null && mDelay == null) oledClearRe.find(line) else null
-            val mOled = if (mSerial == null && mOledClear == null && mIf == null && mPin == null && mWrite == null && mDelay == null) oledRe.find(line) else null
-            val mNrf = if (mSerial == null && mOledClear == null && mOled == null && mIf == null && mPin == null && mWrite == null && mDelay == null) nrfRe.find(line) else null
-            val mServo = if (mSerial == null && mOledClear == null && mOled == null && mNrf == null && mIf == null && mPin == null && mWrite == null && mDelay == null) servoRe.find(line) else null
-            when {
-                mIf != null -> out.add(Instr("IF", mIf.groupValues[1], mIf.groupValues[2]))
-                mPin != null -> out.add(Instr("PINMODE", mPin.groupValues[1], mPin.groupValues[2]))
-                mWrite != null -> out.add(Instr("WRITE", mWrite.groupValues[1], mWrite.groupValues[2]))
-                mDelay != null -> out.add(Instr("DELAY", n = mDelay.groupValues[1].toLongOrNull() ?: 0))
-                mSerial != null -> out.add(Instr("SERIAL", mSerial.groupValues[1]))
-                mOledClear != null -> out.add(Instr("OLED_CLEAR"))
-                mOled != null -> out.add(Instr("OLED", mOled.groupValues[1]))
-                mNrf != null -> out.add(Instr("NRF", mNrf.groupValues[1]))
-                mServo != null -> out.add(Instr("SERVO", n = mServo.groupValues[1].toLongOrNull() ?: 90))
-                line.contains("tone(") -> out.add(Instr("SERIAL", "🔊 tone() — зуммер пищит"))
-            }
+            var handled = false
+            ifRe.find(line)?.let { out.add(Instr("IF", it.groupValues[1], it.groupValues[2])); handled = true }
+            if (!handled) pinModeRe.find(line)?.let { out.add(Instr("PINMODE", it.groupValues[1], it.groupValues[2])); handled = true }
+            if (!handled) writeRe.find(line)?.let { out.add(Instr("WRITE", it.groupValues[1], it.groupValues[2])); handled = true }
+            if (!handled) delayRe.find(line)?.let { out.add(Instr("DELAY", n = it.groupValues[1].toLongOrNull() ?: 0)); handled = true }
+            if (!handled) (serialRe.find(line) ?: serialRe2.find(line))?.let { out.add(Instr("SERIAL", it.groupValues[1])); handled = true }
+            if (!handled) tftClearRe.find(line)?.let { out.add(Instr("TFT_CLEAR")); handled = true }
+            if (!handled) tftRe.find(line)?.let { out.add(Instr("TFT", it.groupValues[1])); handled = true }
+            if (!handled) oledClearRe.find(line)?.let { out.add(Instr("OLED_CLEAR")); handled = true }
+            if (!handled) oledRe.find(line)?.let { out.add(Instr("OLED", it.groupValues[1])); handled = true }
+            if (!handled) nrfRe.find(line)?.let { out.add(Instr("NRF", it.groupValues[1])); handled = true }
+            if (!handled) servoRe.find(line)?.let { out.add(Instr("SERVO", n = it.groupValues[1].toLongOrNull() ?: 90)); handled = true }
+            if (!handled && line.contains("tone(")) out.add(Instr("SERIAL", "🔊 tone() — зуммер пищит"))
             // неизвестные строки игнорируем (как компилятор бы ругнулся — мы мягче)
         }
         // убираем ENDIF от setup()/loop() — лишние ENDIF без IF безвредны в исполнителе
@@ -594,6 +590,20 @@ class FirmwareRunner(private val code: String) {
                         }
                         "OLED_CLEAR" -> {
                             AppState.project.components.filter { it.typeId in listOf("oled", "tft", "lcd1602") }
+                                .forEach { it.props["displayText"] = "" }
+                            AppState.notifyChanged()
+                        }
+                        "TFT" -> {
+                            val tfts = AppState.project.components.filter { it.typeId in listOf("tft", "tft18") }
+                            if (tfts.isEmpty()) AppState.log("📺 tft.print: TFT-дисплей не найден на плате! Добавьте TFT 1.8 или 2.4 из каталога.")
+                            else {
+                                tfts.forEach { it.props["displayText"] = ins.a }
+                                AppState.log("📺 TFT: «${ins.a}»")
+                            }
+                            AppState.notifyChanged()
+                        }
+                        "TFT_CLEAR" -> {
+                            AppState.project.components.filter { it.typeId in listOf("tft", "tft18") }
                                 .forEach { it.props["displayText"] = "" }
                             AppState.notifyChanged()
                         }

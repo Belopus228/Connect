@@ -118,7 +118,7 @@ class SimFragment : Fragment() {
                         else -> sb.append("не горит (ток ${"%.1f".format(st?.currentMa ?: 0f)} мА)\n")
                     }
                 }
-                "oled", "tft", "lcd1602" -> sb.append("• ${c.def().title}: на экране «${c.props["displayText"] ?: ""}»\n")
+                "oled", "tft", "tft18", "lcd1602" -> sb.append("• ${c.def().title}: на экране «${c.props["displayText"] ?: ""}»\n")
                 "nrf24" -> sb.append("• nRF24: канал ${c.props["channel"]}, адрес ${c.props["address"]}, последний пакет: «${c.props["lastPacket"]}»\n")
                 "button" -> sb.append("• Кнопка: ${if (AppState.pressedButtons.contains(c.id)) "НАЖАТА 🟢" else "отпущена"} (режим «Нажимать» на Плате)\n")
                 "bat18650", "bat9v", "lipo" -> sb.append("• ${c.def().title}: ${c.props["voltage"]}В\n")
