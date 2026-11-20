@@ -13,8 +13,8 @@ public sealed class StlMesh
 {
     public List<(StlV A, StlV B, StlV C)> Triangles { get; } = new();
 
-    /// <summary>Сколько треугольников максимум реально рисуем (остальное — прореживание).</summary>
-    public const int MaxRenderTriangles = 12000;
+    /// <summary>Мягкий ориентир прореживания: ячейка кластера всё равно не крупнее ~1 мм модели.</summary>
+    public const int MaxRenderTriangles = 24000;
     /// <summary>Ступеней освещения: грани группируются по оттенку в общие геометрии.</summary>
     public const int ShadeBuckets = 20;
 
@@ -119,7 +119,7 @@ public sealed class StlMesh
         BuildFromClusters(0, minX, minY, minZ);
         if (RenderTriangleCount > MaxRenderTriangles && maxSize > 0)
         {
-            foreach (int div in new[] { 192, 144, 108, 80, 60, 44, 32, 22 })
+            foreach (int div in new[] { 260, 208, 166, 132, 104 })
             {
                 BuildFromClusters(maxSize / div, minX, minY, minZ);
                 if (RenderTriangleCount <= MaxRenderTriangles) break;
@@ -156,11 +156,10 @@ public sealed class StlMesh
             (long, long, long) key = cell > 0
                 ? ((long)Math.Floor((v.X - minX) / cell), (long)Math.Floor((v.Y - minY) / cell), (long)Math.Floor((v.Z - minZ) / cell))
                 : ((long)Math.Round(v.X * 10000), (long)Math.Round(v.Y * 10000), (long)Math.Round(v.Z * 10000));
+            // Берём ПЕРВУЮ исходную вершину кластера и НЕ двигаем её:
+            // точка остаётся ровно на поверхности модели, геометрия не «мнётся».
             if (map.TryGetValue(key, out int idx))
-            {
-                sx[idx] += v.X; sy[idx] += v.Y; sz[idx] += v.Z; cnt[idx]++;
                 return idx;
-            }
             idx = sx.Count;
             map[key] = idx;
             sx.Add(v.X); sy.Add(v.Y); sz.Add(v.Z); cnt.Add(1);

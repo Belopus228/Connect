@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -825,27 +827,29 @@ public sealed class BoardView : FrameworkElement
         return _stlMesh;
     }
 
-    // ---- кэши для быстрой отрисовки STL: массивы переиспользуются между кадрами ----
+    // ---- программный растеризатор STL: z-буфер в битмап, без тысяч WPF-полигонов ----
     private double[] _stlSx = Array.Empty<double>(), _stlSy = Array.Empty<double>(), _stlSd = Array.Empty<double>();
-    private double[] _stlFaceDepth = Array.Empty<double>();
-    private int[] _stlOrder = Array.Empty<int>();
-    private static SolidColorBrush[] _stlBrushes;
+    private WriteableBitmap _stlBmp;
+    private int _stlBmpW, _stlBmpH;
+    private int[] _stlPixels = Array.Empty<int>();
+    private float[] _stlZbuf = Array.Empty<float>();
+    private static int[] _stlColors;
 
-    private static SolidColorBrush StlBrush(int bucket)
+    private static int StlColor(int bucket)
     {
-        if (_stlBrushes == null)
+        if (_stlColors == null)
         {
-            _stlBrushes = new SolidColorBrush[StlMesh.ShadeBuckets];
-            for (int i = 0; i < _stlBrushes.Length; i++)
+            _stlColors = new int[StlMesh.ShadeBuckets];
+            for (int i = 0; i < _stlColors.Length; i++)
             {
                 double f = 0.30 + (i + 0.5) / StlMesh.ShadeBuckets * 0.78;
-                var br = new SolidColorBrush(Color.FromArgb(215,
-                    (byte)Math.Clamp(142 * f, 0, 255), (byte)Math.Clamp(166 * f, 0, 255), (byte)Math.Clamp(191 * f, 0, 255)));
-                br.Freeze();
-                _stlBrushes[i] = br;
+                int r = (int)Math.Clamp(142 * f, 0, 255);
+                int g = (int)Math.Clamp(166 * f, 0, 255);
+                int b = (int)Math.Clamp(191 * f, 0, 255);
+                _stlColors[i] = (255 << 24) | (r << 16) | (g << 8) | b; // BGRA в памяти
             }
         }
-        return _stlBrushes[Math.Clamp(bucket, 0, StlMesh.ShadeBuckets - 1)];
+        return _stlColors[Math.Clamp(bucket, 0, StlMesh.ShadeBuckets - 1)];
     }
 
     private void DrawStlCase(DrawingContext dc)
@@ -904,60 +908,80 @@ public sealed class BoardView : FrameworkElement
             }
         }
 
-        // --- глубина граней и сортировка (дальние первыми) ---
-        int nf = mesh.RenderTriangleCount;
-        if (_stlFaceDepth.Length < nf) { _stlFaceDepth = new double[nf]; _stlOrder = new int[nf]; }
-        var indices = mesh.RenderIndices;
-        // во время вращения камеры рисуем каждый 3-й треугольник — после остановки полный кадр
+        // --- растеризация с z-буфером: сортировка граней больше не нужна ---
         bool interactive = _rotatingCam || _panning || _dragComp != null || _gizmoAxis != null;
-        int faceSkip = interactive ? 3 : 1;
-        int visCount = 0;
-        for (int f = 0; f < nf; f++)
+        double rs = interactive ? 0.5 : 1.0;          // пока крутим камеру — полразрешения
+        int bw = Math.Max(2, (int)Math.Ceiling(ActualWidth * rs));
+        int bh = Math.Max(2, (int)Math.Ceiling(ActualHeight * rs));
+        if (_stlBmp == null || _stlBmpW != bw || _stlBmpH != bh)
+        {
+            _stlBmp = new WriteableBitmap(bw, bh, 96, 96, PixelFormats.Bgra32, null);
+            _stlBmpW = bw; _stlBmpH = bh;
+            _stlPixels = new int[bw * bh];
+            _stlZbuf = new float[bw * bh];
+        }
+        Array.Clear(_stlPixels);
+        Array.Fill(_stlZbuf, float.MinValue);
+        int faceSkip = interactive ? 2 : 1;
+        var indices = mesh.RenderIndices;
+        for (int f = 0; f < mesh.RenderTriangleCount; f++)
         {
             if (faceSkip > 1 && f % faceSkip != 0) continue;
             int i0 = indices[f * 3], i1 = indices[f * 3 + 1], i2 = indices[f * 3 + 2];
-            double x0 = _stlSx[i0], y0 = _stlSy[i0], x1 = _stlSx[i1], y1 = _stlSy[i1], x2 = _stlSx[i2], y2 = _stlSy[i2];
-            double minx = Math.Min(x0, Math.Min(x1, x2)), maxx = Math.Max(x0, Math.Max(x1, x2));
-            double miny = Math.Min(y0, Math.Min(y1, y2)), maxy = Math.Max(y0, Math.Max(y1, y2));
-            if (maxx < -20 || minx > ActualWidth + 20 || maxy < -20 || miny > ActualHeight + 20) continue; // вне экрана
-            if (maxx - minx < 1.1 && maxy - miny < 1.1) continue;                                          // субпиксельная грань
-            _stlFaceDepth[visCount] = (_stlSd[i0] + _stlSd[i1] + _stlSd[i2]) / 3.0;
-            _stlOrder[visCount] = f;
-            visCount++;
-        }
-        Array.Sort(_stlFaceDepth, _stlOrder, 0, visCount);
-
-        // --- рисование: грани одного оттенка подряд склеиваются в одну геометрию ---
-        var edgePen = PenOf("#0b1220", 0.5, 60);
-        edgePen.Freeze();
-        StreamGeometry geo = null;
-        StreamGeometryContext ctx = null;
-        int curBucket = -1;
-        void Flush()
-        {
-            if (ctx == null) return;
-            ctx.Close();
-            geo.Freeze();
-            dc.DrawGeometry(StlBrush(curBucket), edgePen, geo);
-            ctx = null; geo = null;
-        }
-        for (int oi = 0; oi < visCount; oi++)
-        {
-            int f = _stlOrder[oi];
-            int bucket = mesh.RenderShade[f];
-            if (bucket != curBucket)
+            double x0 = _stlSx[i0] * rs, y0 = _stlSy[i0] * rs, z0 = _stlSd[i0];
+            double x1 = _stlSx[i1] * rs, y1 = _stlSy[i1] * rs, z1 = _stlSd[i1];
+            double x2 = _stlSx[i2] * rs, y2 = _stlSy[i2] * rs, z2 = _stlSd[i2];
+            double area = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
+            if (Math.Abs(area) < 1e-9) continue;
+            if (area < 0)
             {
-                Flush();
-                curBucket = bucket;
-                geo = new StreamGeometry();
-                ctx = geo.Open();
+                (x1, x2) = (x2, x1); (y1, y2) = (y2, y1); (z1, z2) = (z2, z1);
+                area = -area;
             }
-            int i0 = indices[f * 3], i1 = indices[f * 3 + 1], i2 = indices[f * 3 + 2];
-            ctx.BeginFigure(new Point(_stlSx[i0], _stlSy[i0]), true, true);
-            ctx.LineTo(new Point(_stlSx[i1], _stlSy[i1]), true, false);
-            ctx.LineTo(new Point(_stlSx[i2], _stlSy[i2]), true, false);
+            int minx = Math.Clamp((int)Math.Floor(Math.Min(x0, Math.Min(x1, x2))), 0, bw - 1);
+            int maxx = Math.Clamp((int)Math.Ceiling(Math.Max(x0, Math.Max(x1, x2))), 0, bw - 1);
+            int miny = Math.Clamp((int)Math.Floor(Math.Min(y0, Math.Min(y1, y2))), 0, bh - 1);
+            int maxy = Math.Clamp((int)Math.Ceiling(Math.Max(y0, Math.Max(y1, y2))), 0, bh - 1);
+            if (minx > maxx || miny > maxy) continue;
+            int color = StlColor(mesh.RenderShade[f]);
+            double invArea = 1.0 / area;
+            double px0 = minx + 0.5, py0 = miny + 0.5;
+            // барицентрические веса и их шаги по x/y (инкрементно, без делений в цикле)
+            double w0 = (x2 - x1) * (py0 - y1) - (y2 - y1) * (px0 - x1);
+            double w1 = (x0 - x2) * (py0 - y2) - (y0 - y2) * (px0 - x2);
+            double w2 = (x1 - x0) * (py0 - y0) - (y1 - y0) * (px0 - x0);
+            double w0dx = -(y2 - y1), w0dy = x2 - x1;
+            double w1dx = -(y0 - y2), w1dy = x0 - x2;
+            double w2dx = -(y1 - y0), w2dy = x1 - x0;
+            for (int y = miny; y <= maxy; y++)
+            {
+                double cw0 = w0, cw1 = w1, cw2 = w2;
+                int row = y * bw;
+                for (int x = minx; x <= maxx; x++)
+                {
+                    if (cw0 >= 0 && cw1 >= 0 && cw2 >= 0)
+                    {
+                        double z = (cw0 * z0 + cw1 * z1 + cw2 * z2) * invArea;
+                        int pi = row + x;
+                        if (z > _stlZbuf[pi])
+                        {
+                            _stlZbuf[pi] = (float)z;
+                            _stlPixels[pi] = color;
+                        }
+                    }
+                    cw0 += w0dx; cw1 += w1dx; cw2 += w2dx;
+                }
+                w0 += w0dy; w1 += w1dy; w2 += w2dy;
+            }
         }
-        Flush();
+        _stlBmp.Lock();
+        try
+        {
+            Marshal.Copy(_stlPixels, 0, _stlBmp.BackBuffer, bw * bh);
+            _stlBmp.AddDirtyRect(new Int32Rect(0, 0, bw, bh));
+        }
+        finally { _stlBmp.Unlock(); }
+        dc.DrawImage(_stlBmp, new Rect(0, 0, ActualWidth, ActualHeight));
     }
 
     // ---------------- свободные линии (без пинов и снапа) ----------------
