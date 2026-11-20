@@ -1,5 +1,5 @@
   Determining projects to restore...
-  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 8.46 sec).
+  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 10.34 sec).
   ConnectPC -> D:\a\Connect\Connect\pc\bin\Release\net8.0-windows\win-x64\ConnectPC.dll
   ConnectPC -> D:\a\Connect\Connect\pc-out\
 PUBLISH_EXIT=0
