@@ -100,6 +100,32 @@ class Scene3DView @JvmOverloads constructor(
 
     fun clearPending() { pendingPin = null; invalidate() }
 
+    /** Точный пересчёт точки экрана в точку на плоскости платы (Z=0) через луч камеры. */
+    fun screenToBoard(sx: Float, sy: Float): Pair<Float, Float>? {
+        val cam = camera()
+        val cx = (sx - width / 2f) / cam.focal
+        val cy = -(sy - height / 2f) / cam.focal
+        // направление луча в мировых координатах
+        val dir = cam.fwd + cam.right * cx + cam.up * cy
+        if (kotlin.math.abs(dir.z) < 0.0005f) return null
+        val t = -cam.eye.z / dir.z
+        if (t <= 0f) return null
+        val hit = cam.eye + dir * t
+        return hit.x to hit.y
+    }
+
+    /** Сброс детали из меню: sx,sy — координаты DragEvent внутри этого View. */
+    fun dropComponent(typeId: String, sx: Float, sy: Float): Boolean {
+        val def = Catalog.byId(typeId)
+        val world = screenToBoard(sx, sy) ?: return false
+        val gx = Math.round(world.first / 2.54f - def.wGrid / 2f)
+        val gy = Math.round(world.second / 2.54f - def.hGrid / 2f)
+        AppState.addComponentAt(typeId, gx, gy)
+        AppState.mode = "move"
+        invalidate()
+        return true
+    }
+
     // ---------------- геометрия ----------------
 
     private fun shade(color: Int, f: Float): Int {

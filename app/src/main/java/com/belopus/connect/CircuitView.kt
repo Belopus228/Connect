@@ -415,4 +415,15 @@ class CircuitView @JvmOverloads constructor(
     }
 
     fun clearPending() { pendingPin = null; invalidate() }
+
+    /** Сброс детали из меню в 2D-виде: sx,sy — координаты внутри View. */
+    fun dropComponent(typeId: String, sx: Float, sy: Float): Boolean {
+        val def = Catalog.byId(typeId)
+        val gx = Math.round((sx - ox) / cell - def.wGrid / 2f)
+        val gy = Math.round((sy - oy) / cell - def.hGrid / 2f)
+        AppState.addComponentAt(typeId, gx, gy)
+        AppState.mode = "move"
+        invalidate()
+        return true
+    }
 }

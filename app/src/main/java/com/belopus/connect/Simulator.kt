@@ -78,6 +78,23 @@ object AppState {
         return c
     }
 
+    /** Добавить деталь точно в клетку (gx,gy) — используется при drag-and-drop из правого меню. */
+    fun addComponentAt(typeId: String, gx: Int, gy: Int): PlacedComponent {
+        val def = Catalog.byId(typeId)
+        val c = PlacedComponent(
+            typeId = typeId,
+            gridX = gx.coerceIn(0, (project.boardCols - def.wGrid).coerceAtLeast(0)),
+            gridY = gy.coerceIn(0, (project.boardRows - def.hGrid).coerceAtLeast(0)),
+            label = def.title
+        )
+        c.props.putAll(def.defaultProps)
+        project.components.add(c)
+        selectedId = c.id
+        log("🧩 Перетащено из меню: ${def.title} → плата (${c.gridX},${c.gridY})")
+        notifyChanged()
+        return c
+    }
+
     fun deleteComponent(id: String) {
         project.components.removeAll { it.id == id }
         project.wires.removeAll { it.aComp == id || it.bComp == id }
