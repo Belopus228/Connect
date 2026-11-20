@@ -271,11 +271,33 @@ public sealed class ProjectData
     public PlacedComponent AddAt(string type, int gx, int gy)
     {
         var def = Catalog.ById(type);
+        int maxX = Math.Max(0, Cols - def.W), maxY = Math.Max(0, Rows - def.H);
+        gx = Math.Clamp(gx, 0, maxX);
+        gy = Math.Clamp(gy, 0, maxY);
+        bool Overlaps(int x, int y) => Components.Any(c =>
+        {
+            var (ew, eh) = c.EffSize;
+            return x < c.X + ew && x + def.W > c.X && y < c.Y + eh && y + def.H > c.Y;
+        });
+        if (Overlaps(gx, gy))
+        {
+            // Точка занята: ищем ближайшее свободное место кольцами вокруг неё,
+            // чтобы две детали НИКОГДА не оказались в одной точке друг на друге.
+            bool found = false;
+            for (int r = 1; r <= Math.Max(Cols, Rows) && !found; r++)
+                for (int dy = -r; dy <= r && !found; dy++)
+                    for (int dx = -r; dx <= r && !found; dx++)
+                    {
+                        int nx = gx + dx, ny = gy + dy;
+                        if (nx < 0 || ny < 0 || nx > maxX || ny > maxY) continue;
+                        if (!Overlaps(nx, ny)) { gx = nx; gy = ny; found = true; }
+                    }
+        }
         var c = new PlacedComponent
         {
             Type = type,
-            X = Math.Clamp(gx, 0, Math.Max(0, Cols - def.W)),
-            Y = Math.Clamp(gy, 0, Math.Max(0, Rows - def.H)),
+            X = gx,
+            Y = gy,
             Props = new Dictionary<string, string>(def.DefaultProps)
         };
         Components.Add(c);
@@ -284,17 +306,8 @@ public sealed class ProjectData
     public PlacedComponent AddFree(string type)
     {
         var def = Catalog.ById(type);
-        for (int y = 1; y < Rows - def.H; y++)
-            for (int x = 1; x < Cols - def.W; x++)
-            {
-                bool clash = Components.Any(c =>
-                {
-                    var (ew, eh) = c.EffSize;
-                    return x < c.X + ew && x + def.W > c.X && y < c.Y + eh && y + def.H > c.Y;
-                });
-                if (!clash) return AddAt(type, x, y);
-            }
-        return AddAt(type, 2, 2);
+        // Новая деталь — по центру платы; AddAt сам раздвинет, если место занято.
+        return AddAt(type, Cols / 2 - def.W / 2, Rows / 2 - def.H / 2);
     }
 
     public static ProjectData CreateDemo()

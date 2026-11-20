@@ -37,7 +37,7 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tutorial");
-        Log("✅ Connect v2.11 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.12 — нативная Windows-сборка открыта");
         Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
@@ -156,7 +156,7 @@ public partial class MainWindow : Window
     {
         var hint = new TextBlock
         {
-            Text = "Перетащите деталь мышкой на плату.\nКлик — поставить в свободное место.",
+            Text = "Перетащите деталь мышкой на плату.\nКлик — поставить по центру платы.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
             Margin = new Thickness(0, 0, 0, 8)

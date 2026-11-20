@@ -311,6 +311,7 @@ public sealed class BoardView : FrameworkElement
             foreach (var c in Data.Components) BuildComponentMesh(c, state, meshFaces);
             DrawMeshFaces(dc, meshFaces);
             DrawDynamicOverlays(dc, state);
+            if (!bottom) DrawContactPads(dc);
         }
         // провода-дуги
         foreach (var w in Data.Wires.Where(w => w.Style != "solder"))
@@ -510,8 +511,8 @@ public sealed class BoardView : FrameworkElement
         // мелкий шрифт у каждой площадки, наружу от центра детали.
         foreach (var c in Data.Components)
         {
-            var (ew, eh) = c.EffSize;
-            double cx = c.X + ew / 2.0, cy = c.Y + eh / 2.0;
+            var ctr3 = c.Transform(c.Def.W / 2.0, c.Def.H / 2.0, 0);
+            double cx = ctr3.X, cy = ctr3.Y;
             foreach (var pin in c.Def.Pins)
             {
                 var (px, py) = PinWorld(c, pin);
@@ -708,6 +709,23 @@ public sealed class BoardView : FrameworkElement
                 break;
         }
         foreach (var f in m.Faces) outp.Add((f, c));
+    }
+
+    /// <summary>
+    /// Контактные площадки деталей: рисуются в точности там, где у 3D-модели
+    /// золотые ножки (PinPos3). Эту же точку используют снап проводов, подписи
+    /// и электрический расчёт — контакт один, и он на модели, а не где-то ещё.
+    /// </summary>
+    private void DrawContactPads(DrawingContext dc)
+    {
+        foreach (var c in Data.Components)
+            foreach (var pin in c.Def.Pins)
+            {
+                var p3 = c.PinPos3(pin);
+                var sp = Project(p3.X, p3.Y, p3.Z + 0.34);
+                dc.DrawEllipse(Brush("#ffd54f"), PenOf("#7a5b00", 1.0), sp, 3.8, 3.0);
+                dc.DrawEllipse(Brush("#fff8e1"), null, new Point(sp.X - 0.9, sp.Y - 0.9), 1.2, 1.0);
+            }
     }
 
     private void DrawComponentBottom(DrawingContext dc, PlacedComponent c)
