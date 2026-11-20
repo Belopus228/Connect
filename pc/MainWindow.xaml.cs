@@ -37,7 +37,7 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tutorial");
-        Log("✅ Connect v2.9 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.10 — нативная Windows-сборка открыта");
         Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
@@ -319,8 +319,11 @@ public partial class MainWindow : Window
                 _board.Data.CaseStlPath = dlg.FileName;
                 _board.Data.CaseStlName = Path.GetFileName(dlg.FileName);
                 _board.Data.CaseType = "None";
-                Log($"🧰 STL-корпус импортирован: {_board.Data.CaseStlName} — {mesh.Triangles.Count} треугольников, " +
-                    $"{mesh.SizeX:F0}×{mesh.SizeY:F0}×{mesh.SizeZ:F0} мм. Модель по центру платы; масштаб и сдвиги — ползунками ниже.");
+                string dec = mesh.RenderTriangleCount < mesh.Triangles.Count
+                    ? $" Для отрисовки прорежено до {mesh.RenderTriangleCount}."
+                    : "";
+                Log($"🧰 STL-корпус импортирован: {_board.Data.CaseStlName} — {mesh.Triangles.Count} треугольников," + dec +
+                    $" {mesh.SizeX:F0}×{mesh.SizeY:F0}×{mesh.SizeZ:F0} мм. Модель по центру платы; масштаб и сдвиги — ползунками ниже.");
                 RefreshState();
                 ShowPanel("tools");
             }

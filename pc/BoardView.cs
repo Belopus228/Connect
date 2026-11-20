@@ -825,36 +825,139 @@ public sealed class BoardView : FrameworkElement
         return _stlMesh;
     }
 
+    // ---- кэши для быстрой отрисовки STL: массивы переиспользуются между кадрами ----
+    private double[] _stlSx = Array.Empty<double>(), _stlSy = Array.Empty<double>(), _stlSd = Array.Empty<double>();
+    private double[] _stlFaceDepth = Array.Empty<double>();
+    private int[] _stlOrder = Array.Empty<int>();
+    private static SolidColorBrush[] _stlBrushes;
+
+    private static SolidColorBrush StlBrush(int bucket)
+    {
+        if (_stlBrushes == null)
+        {
+            _stlBrushes = new SolidColorBrush[StlMesh.ShadeBuckets];
+            for (int i = 0; i < _stlBrushes.Length; i++)
+            {
+                double f = 0.30 + (i + 0.5) / StlMesh.ShadeBuckets * 0.78;
+                var br = new SolidColorBrush(Color.FromArgb(215,
+                    (byte)Math.Clamp(142 * f, 0, 255), (byte)Math.Clamp(166 * f, 0, 255), (byte)Math.Clamp(191 * f, 0, 255)));
+                br.Freeze();
+                _stlBrushes[i] = br;
+            }
+        }
+        return _stlBrushes[Math.Clamp(bucket, 0, StlMesh.ShadeBuckets - 1)];
+    }
+
     private void DrawStlCase(DrawingContext dc)
     {
         var mesh = GetStlMesh();
-        if (mesh == null || mesh.Triangles.Count == 0) return;
+        if (mesh == null || mesh.RenderTriangleCount == 0 || ActualWidth < 10) return;
+
+        // --- мировая трансформация модели (одна на кадр) ---
         double k = Math.Max(0.05, Data.CaseStlScale) / 2.54; // миллиметры файла -> клетки платы
         double midX = (mesh.MinX + mesh.MaxX) / 2.0, midY = (mesh.MinY + mesh.MaxY) / 2.0;
         double bcx = Data.Cols / 2.0 + Data.CaseStlX, bcy = Data.Rows / 2.0 + Data.CaseStlY;
-        (double, double, double) W(StlV v) =>
-            (bcx + (v.X - midX) * k, bcy + (v.Y - midY) * k, Data.CaseStlZ + (v.Z - mesh.MinZ) * k);
-        // очень плотные модели прореживаем, чтобы интерфейс не тормозил
-        int step = Math.Max(1, (int)Math.Ceiling(mesh.Triangles.Count / 60000.0));
-        var rendered = new List<(Point[] Pts, double Depth, double Shade)>();
-        for (int i = 0; i < mesh.Triangles.Count; i += step)
+        double baseZ = Data.CaseStlZ - mesh.MinZ * k;
+
+        // --- тригонометрия камеры считается ОДИН раз на кадр, а не на вершину ---
+        double cxb = Data.Cols / 2.0, cyb = Data.Rows / 2.0;
+        double bra = BoardRotDeg * Math.PI / 180.0, bcos = Math.Cos(bra), bsin = Math.Sin(bra);
+        double caa = CameraAngle * Math.PI / 180.0, ccos = Math.Cos(caa), csin = Math.Sin(caa);
+        bool bottomSide = ViewSide == "Bottom";
+        bool persp = UsePerspective;
+        double el = Math.Atan(Math.Max(Tilt, 0.10) * 1.4142);
+        double sinE = Math.Sin(el), cosE = Math.Cos(el);
+        const double SQ = 0.70710678;
+        double foc = Cell * Zoom * 105.0, linK = Cell * Zoom;
+        double halfW = ActualWidth / 2 + Pan.X, halfH = ActualHeight / 2 + Pan.Y;
+
+        int nv = mesh.RenderX.Length;
+        if (_stlSx.Length < nv) { _stlSx = new double[nv]; _stlSy = new double[nv]; _stlSd = new double[nv]; }
+        var rx = mesh.RenderX; var ry = mesh.RenderY; var rz = mesh.RenderZ;
+        for (int i = 0; i < nv; i++)
         {
-            var t = mesh.Triangles[i];
-            var wv = new[] { W(t.A), W(t.B), W(t.C) };
-            var proj = wv.Select(v => ProjectD(v.Item1, v.Item2, v.Item3)).ToArray();
-            double depth = proj.Average(q => q.Depth);
-            var a = wv[0]; var b = wv[1]; var cc = wv[2];
-            double ux = b.Item1 - a.Item1, uy = b.Item2 - a.Item2, uz = b.Item3 - a.Item3;
-            double vx = cc.Item1 - a.Item1, vy = cc.Item2 - a.Item2, vz = cc.Item3 - a.Item3;
-            double nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-            double nl = Math.Sqrt(nx * nx + ny * ny + nz * nz);
-            if (nl < 1e-9) { nx = 0; ny = 0; nz = 1; nl = 1; }
-            double dot = (nx * -0.45 + ny * -0.55 + nz * 0.75) / (nl * 1.03);
-            double shade = Math.Clamp(0.48 + 0.62 * Math.Max(0, dot), 0.30, 1.08);
-            rendered.Add((proj.Select(q => q.Pt).ToArray(), depth, shade));
+            double wx = bcx + (rx[i] - midX) * k;
+            double wy = bcy + (ry[i] - midY) * k;
+            double wz = baseZ + rz[i] * k;
+            double dx = wx - cxb, dy = wy - cyb;
+            double ux = cxb + dx * bcos - dy * bsin;
+            double uy = cyb + dx * bsin + dy * bcos;
+            if (bottomSide) ux = Data.Cols - ux;
+            dx = ux - cxb; dy = uy - cyb;
+            double xr = dx * ccos - dy * csin;
+            double yr = dx * csin + dy * ccos;
+            if (persp)
+            {
+                double xv = (xr - yr) * SQ;
+                double yv = -(xr + yr) * SQ * sinE + wz * cosE;
+                double zv = 80.0 - (xr + yr) * SQ * cosE - wz * sinE;
+                if (zv < 2.0) zv = 2.0;
+                _stlSx[i] = halfW + xv * foc / zv;
+                _stlSy[i] = halfH - yv * foc / zv;
+                _stlSd[i] = -zv;
+            }
+            else
+            {
+                _stlSx[i] = halfW + (xr - yr) * linK;
+                _stlSy[i] = halfH + ((xr + yr) * Tilt - wz) * linK;
+                _stlSd[i] = xr + yr + 2 * Tilt * wz;
+            }
         }
-        foreach (var r in rendered.OrderBy(r => r.Depth))
-            Poly(dc, r.Pts, Shade("#8ea6bf", r.Shade, 215), PenOf("#0b1220", 0.5, 60));
+
+        // --- глубина граней и сортировка (дальние первыми) ---
+        int nf = mesh.RenderTriangleCount;
+        if (_stlFaceDepth.Length < nf) { _stlFaceDepth = new double[nf]; _stlOrder = new int[nf]; }
+        var indices = mesh.RenderIndices;
+        // во время вращения камеры рисуем каждый 3-й треугольник — после остановки полный кадр
+        bool interactive = _rotatingCam || _panning || _dragComp != null || _gizmoAxis != null;
+        int faceSkip = interactive ? 3 : 1;
+        int visCount = 0;
+        for (int f = 0; f < nf; f++)
+        {
+            if (faceSkip > 1 && f % faceSkip != 0) continue;
+            int i0 = indices[f * 3], i1 = indices[f * 3 + 1], i2 = indices[f * 3 + 2];
+            double x0 = _stlSx[i0], y0 = _stlSy[i0], x1 = _stlSx[i1], y1 = _stlSy[i1], x2 = _stlSx[i2], y2 = _stlSy[i2];
+            double minx = Math.Min(x0, Math.Min(x1, x2)), maxx = Math.Max(x0, Math.Max(x1, x2));
+            double miny = Math.Min(y0, Math.Min(y1, y2)), maxy = Math.Max(y0, Math.Max(y1, y2));
+            if (maxx < -20 || minx > ActualWidth + 20 || maxy < -20 || miny > ActualHeight + 20) continue; // вне экрана
+            if (maxx - minx < 1.1 && maxy - miny < 1.1) continue;                                          // субпиксельная грань
+            _stlFaceDepth[visCount] = (_stlSd[i0] + _stlSd[i1] + _stlSd[i2]) / 3.0;
+            _stlOrder[visCount] = f;
+            visCount++;
+        }
+        Array.Sort(_stlFaceDepth, _stlOrder, 0, visCount);
+
+        // --- рисование: грани одного оттенка подряд склеиваются в одну геометрию ---
+        var edgePen = PenOf("#0b1220", 0.5, 60);
+        edgePen.Freeze();
+        StreamGeometry geo = null;
+        StreamGeometryContext ctx = null;
+        int curBucket = -1;
+        void Flush()
+        {
+            if (ctx == null) return;
+            ctx.Close();
+            geo.Freeze();
+            dc.DrawGeometry(StlBrush(curBucket), edgePen, geo);
+            ctx = null; geo = null;
+        }
+        for (int oi = 0; oi < visCount; oi++)
+        {
+            int f = _stlOrder[oi];
+            int bucket = mesh.RenderShade[f];
+            if (bucket != curBucket)
+            {
+                Flush();
+                curBucket = bucket;
+                geo = new StreamGeometry();
+                ctx = geo.Open();
+            }
+            int i0 = indices[f * 3], i1 = indices[f * 3 + 1], i2 = indices[f * 3 + 2];
+            ctx.BeginFigure(new Point(_stlSx[i0], _stlSy[i0]), true, true);
+            ctx.LineTo(new Point(_stlSx[i1], _stlSy[i1]), true, false);
+            ctx.LineTo(new Point(_stlSx[i2], _stlSy[i2]), true, false);
+        }
+        Flush();
     }
 
     // ---------------- свободные линии (без пинов и снапа) ----------------
