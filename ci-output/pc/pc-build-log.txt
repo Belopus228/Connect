@@ -1,8 +1,7 @@
   Determining projects to restore...
-  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 8.4 sec).
+  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 7.03 sec).
 D:\a\Connect\Connect\pc\BoardView.cs(144,22): warning CS0219: The variable 'SQ' is assigned but its value is never used [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\BoardView.cs(520,81): error CS1061: '(double, double, double)' does not contain a definition for 'Z' and no accessible extension method 'Z' accepting a first argument of type '(double, double, double)' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\BoardView.cs(535,31): error CS1061: '(double, double, double)' does not contain a definition for 'X' and no accessible extension method 'X' accepting a first argument of type '(double, double, double)' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\BoardView.cs(535,40): error CS1061: '(double, double, double)' does not contain a definition for 'Y' and no accessible extension method 'Y' accepting a first argument of type '(double, double, double)' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-D:\a\Connect\Connect\pc\BoardView.cs(535,48): error CS1061: '(double, double, double)' does not contain a definition for 'Z' and no accessible extension method 'Z' accepting a first argument of type '(double, double, double)' could be found (are you missing a using directive or an assembly reference?) [D:\a\Connect\Connect\pc\ConnectPC.csproj]
-PUBLISH_EXIT=1
+  ConnectPC -> D:\a\Connect\Connect\pc\bin\Release\net8.0-windows\win-x64\ConnectPC.dll
+  ConnectPC -> D:\a\Connect\Connect\pc-out\
+PUBLISH_EXIT=0
+EXE_SIZE_BYTES=71686992
