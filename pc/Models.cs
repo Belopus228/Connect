@@ -69,6 +69,10 @@ public static class Catalog
             new[] { ("+",1,0),("-",3,0) }, new() { ["voltage"] = "9" });
         Add("lipo", "Li-Po 3.7В", "LiPo", 8, 5, 6, "#f9a825",
             new[] { ("+",7,2),("-",0,2) }, new() { ["voltage"] = "3.7" });
+        Add("batAA1000", "Батарейка AA 1000 мАч", "AA·1000", 8, 3, 14, "#1565c0",
+            new[] { ("+",7,1),("-",0,1) }, new() { ["voltage"] = "1.2", ["mah"] = "1000" });
+        Add("batAA1800", "Батарейка AA 1800 мАч", "AA·1800", 8, 3, 14, "#ef6c00",
+            new[] { ("+",7,1),("-",0,1) }, new() { ["voltage"] = "1.2", ["mah"] = "1800" });
         Add("buzzer", "Пьезо-зуммер", "BUZ", 4, 4, 9, "#455a64", new[] { ("+",0,3),("-",3,3) });
         Add("dht22", "Датчик DHT22", "DHT22", 7, 5, 12, "#0277bd",
             new[] { ("VCC",0,2),("DATA",2,2),("GND",6,2) }, new() { ["temp"] = "24.5", ["hum"] = "48" });
@@ -127,6 +131,8 @@ public sealed class FreePoint
 {
     public double X { get; set; }
     public double Y { get; set; }
+    /// <summary>Высота звена над платой в клетках (регулируется колесом мыши).</summary>
+    public double Z { get; set; }
     public FreePoint() { }
     public FreePoint(double x, double y) { X = x; Y = y; }
 }
@@ -140,6 +146,7 @@ public sealed class FreeWire
     public List<FreePoint> Points { get; set; } = new();
     public string Style { get; set; } = "wire"; // wire | solder
     public string Color { get; set; } = "#d32f2f";
+    public double Thickness { get; set; } = 1.0;
     public string Side { get; set; } = "Top";   // Top | Bottom
     public string Quality { get; set; } = "good";
     public int TempC { get; set; } = 350;
@@ -168,6 +175,10 @@ public sealed class ProjectData
     public List<Measurement> Measurements { get; set; } = new();
     /// <summary>Корпус платы: None | Acrylic | Black | BlueMetal.</summary>
     public string CaseType { get; set; } = "None";
+    /// <summary>Отступ корпуса от платы в клетках.</summary>
+    public double CaseMargin { get; set; } = 1.2;
+    /// <summary>Высота стенок корпуса в клетках.</summary>
+    public double CaseHeight { get; set; } = 4.6;
     public string Code { get; set; } = FirmwareExamples.All[0].Code;
     // runtime (не сериализуются целиком, но Json не повредит)
     public Dictionary<string, int> PinOutputs { get; set; } = new();
@@ -287,7 +298,8 @@ public sealed class ProjectData
         var dto = new ProjectData
         {
             Components = Components, Wires = Wires, FreeWires = FreeWires, Measurements = Measurements,
-            Code = Code, CaseType = CaseType, Cols = Cols, Rows = Rows
+            Code = Code, CaseType = CaseType, CaseMargin = CaseMargin, CaseHeight = CaseHeight,
+            Cols = Cols, Rows = Rows
         };
         File.WriteAllText(path, JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -389,7 +401,7 @@ public static class Circuit
         var uf = BuildUF(p);
         var sources = new Dictionary<string, double>();
         var grounds = new HashSet<string>();
-        foreach (var c in p.Components.Where(c => c.Type is "bat18650" or "bat9v" or "lipo"))
+        foreach (var c in p.Components.Where(c => c.Type is "bat18650" or "bat9v" or "lipo" or "batAA1000" or "batAA1800"))
         {
             double v = double.TryParse(c.Prop("voltage", "3.7"), System.Globalization.NumberStyles.Any,
                 System.Globalization.CultureInfo.InvariantCulture, out var vv) ? vv : 3.7;
@@ -479,7 +491,7 @@ public static class Circuit
         string root = uf.Find(espId + "|" + pinName);
         foreach (var c in p.Components)
         {
-            if (c.Type is "bat18650" or "bat9v" or "lipo")
+            if (c.Type is "bat18650" or "bat9v" or "lipo" or "batAA1000" or "batAA1800")
             {
                 if (uf.Find(Node(c, "-")) == root) return 0;
                 if (uf.Find(Node(c, "+")) == root) return 1;

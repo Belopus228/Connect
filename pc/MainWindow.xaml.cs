@@ -28,6 +28,7 @@ public partial class MainWindow : Window
         DataContext = this;
 
         BoardHost.Content = _board;
+        KeyDown += OnKeyDown;
         _runner = new FirmwareRunner(_board.Data);
         _runner.OnOutput = m => Dispatcher.Invoke(() => Log(m));
         _runner.StateChanged += () =>
@@ -36,13 +37,43 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tutorial");
-        Log("✅ Connect v2.4 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.5 — нативная Windows-сборка открыта");
         Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
     }
 
     private ListBox EspPinsList;
+
+    private void OnKeyDown(object sender, KeyEventArgs e)
+    {
+        if (Keyboard.FocusedElement is TextBox) return;
+        switch (e.Key)
+        {
+            case Key.D1: SetMode("Camera"); break;
+            case Key.D2: SetMode("MoveBoard"); break;
+            case Key.D3: SetMode("Move"); break;
+            case Key.D4: SetMode("Wire"); break;
+            case Key.D5: SetMode("Sim"); break;
+            case Key.D6: SetMode("Measure"); break;
+            case Key.D7: SetMode("Delete"); break;
+            case Key.R:
+                if (_board.Selected != null) { _board.RotateComponent(_board.Selected); RefreshState(); }
+                break;
+            case Key.Delete:
+                if (_board.Selected != null)
+                {
+                    var c = _board.Selected;
+                    _board.Data.Components.Remove(c);
+                    _board.Data.Wires.RemoveAll(w => w.AId == c.Id || w.BId == c.Id);
+                    _board.Selected = null;
+                    RefreshState();
+                    Log($"🗑 Удалено: {c.Def.Title}");
+                }
+                break;
+            case Key.F: _board.FitView(); break;
+        }
+    }
 
     // -------------------- панель --------------------
     private void ShowPanel(string kind)
@@ -152,7 +183,7 @@ public partial class MainWindow : Window
         SideContent.Children.Add(SectionTitle("РЕЖИМ РАБОТЫ"));
         SideContent.Children.Add(new TextBlock
         {
-            Text = "Режимы переключаются на левой панели инструментов:\n📷 камера • ✋ плата • ↔ деталь • ✒ провод • 🔥 пайка • 🖱 симуляция • 📏 замер • 🗑 удалить.\n\nАктивный режим подсвечен голубым.",
+            Text = "Режимы переключаются на левой панели инструментов:\n📷 камера • ✋ плата • ↔ деталь • ✒ провод • 🖱 симуляция • 📏 замер • 🗑 удалить.\n\nАктивный режим подсвечен голубым.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
             Margin = new Thickness(0, 0, 0, 4)
@@ -234,28 +265,110 @@ public partial class MainWindow : Window
             TextWrapping = TextWrapping.Wrap
         });
 
-        SideContent.Children.Add(SectionTitle("ПАЯЛЬНИК И ПРИПОЙ"));
-        var tempLabel = new TextBlock { Text = $"Жало: {_board.SolderTempC}°C" };
-        var tempSlider = new Slider { Minimum = 200, Maximum = 480, Value = _board.SolderTempC, TickFrequency = 10 };
-        tempSlider.ValueChanged += (_, ev) =>
+        var caseMarginLabel = new TextBlock { Text = $"Отступ корпуса: {_board.Data.CaseMargin:F1} кл." };
+        var caseMarginSlider = new Slider { Minimum = 0.5, Maximum = 4, Value = _board.Data.CaseMargin, TickFrequency = 0.5 };
+        caseMarginSlider.ValueChanged += (_, ev) =>
         {
-            _board.SolderTempC = (int)ev.NewValue;
-            tempLabel.Text = $"Жало: {_board.SolderTempC}°C" + QualitySuffix();
+            _board.Data.CaseMargin = ev.NewValue;
+            caseMarginLabel.Text = $"Отступ корпуса: {ev.NewValue:F1} кл.";
+            _board.InvalidateVisual();
         };
-        SideContent.Children.Add(tempLabel);
-        SideContent.Children.Add(tempSlider);
-        var fluxBox = new CheckBox { Content = "Флюс", IsChecked = _board.UseFlux };
-        fluxBox.Checked += (_, _) => _board.UseFlux = true;
-        fluxBox.Unchecked += (_, _) => _board.UseFlux = false;
-        SideContent.Children.Add(fluxBox);
-        var solderHint = new TextBlock
+        var caseHeightLabel = new TextBlock { Text = $"Высота корпуса: {_board.Data.CaseHeight:F1} кл." };
+        var caseHeightSlider = new Slider { Minimum = 2, Maximum = 9, Value = _board.Data.CaseHeight, TickFrequency = 0.5 };
+        caseHeightSlider.ValueChanged += (_, ev) =>
         {
-            Text = "Хорошая пайка: 320–380°C + флюс. <280°C — холодная,\n>430°C — перегрев и поджог платы.",
-            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
+            _board.Data.CaseHeight = ev.NewValue;
+            caseHeightLabel.Text = $"Высота корпуса: {ev.NewValue:F1} кл.";
+            _board.InvalidateVisual();
+        };
+        SideContent.Children.Add(caseMarginLabel);
+        SideContent.Children.Add(caseMarginSlider);
+        SideContent.Children.Add(caseHeightLabel);
+        SideContent.Children.Add(caseHeightSlider);
+
+        SideContent.Children.Add(SectionTitle("ВЫБРАННАЯ ДЕТАЛЬ"));
+        var sel = _board.Selected;
+        if (sel == null)
+        {
+            SideContent.Children.Add(new TextBlock
+            {
+                Text = "Ничего не выбрано. В режиме «Деталь» кликните компонент:\nпоявятся стрелки X/Y как в Blender и ручка поворота ⟳.",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184))
+            });
+        }
+        else
+        {
+            SideContent.Children.Add(new TextBlock
+            {
+                Text = $"{sel.Def.Title} @({sel.X},{sel.Y}), поворот {sel.Rot}°",
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 4)
+            });
+            var selRow = new StackPanel { Orientation = Orientation.Horizontal };
+            var rotBtn = new Button { Content = "⟳ Повернуть" };
+            rotBtn.Click += (_, _) => { if (_board.Selected != null) { _board.RotateComponent(_board.Selected); ShowPanel("tools"); } };
+            var delBtn = new Button { Content = "🗑 Удалить" };
+            delBtn.Click += (_, _) =>
+            {
+                var c = _board.Selected;
+                if (c == null) return;
+                _board.Data.Components.Remove(c);
+                _board.Data.Wires.RemoveAll(w => w.AId == c.Id || w.BId == c.Id);
+                _board.Selected = null;
+                RefreshState();
+                ShowPanel("tools");
+            };
+            selRow.Children.Add(rotBtn);
+            selRow.Children.Add(delBtn);
+            SideContent.Children.Add(selRow);
+            if (sel.Type == "resistor")
+            {
+                var ohmsBox = new ComboBox { Width = 150, HorizontalAlignment = HorizontalAlignment.Left };
+                foreach (var o in new[] { "100", "220", "470", "1000", "4700", "10000" }) ohmsBox.Items.Add(o + " Ω");
+                ohmsBox.SelectedItem = sel.Prop("ohms", "220") + " Ω";
+                ohmsBox.SelectionChanged += (_, _) =>
+                {
+                    if (_board.Selected != null && ohmsBox.SelectedItem is string t)
+                        _board.Selected.Props["ohms"] = t.Replace(" Ω", "");
+                    _board.InvalidateVisual();
+                };
+                SideContent.Children.Add(new TextBlock { Text = "Сопротивление:" });
+                SideContent.Children.Add(ohmsBox);
+            }
+            if (sel.Type == "led")
+            {
+                var colBox = new ComboBox { Width = 150, HorizontalAlignment = HorizontalAlignment.Left };
+                foreach (var cn in new[] { "Красный", "Зелёный", "Синий", "Жёлтый", "Белый" }) colBox.Items.Add(cn);
+                colBox.SelectedItem = sel.Prop("colorName", "Красный");
+                colBox.SelectionChanged += (_, _) =>
+                {
+                    if (_board.Selected != null && colBox.SelectedItem is string t)
+                        _board.Selected.Props["colorName"] = t;
+                    _board.InvalidateVisual();
+                };
+                SideContent.Children.Add(new TextBlock { Text = "Цвет светодиода:" });
+                SideContent.Children.Add(colBox);
+            }
+        }
+
+        SideContent.Children.Add(SectionTitle("ПРОВОД"));
+        var thickLabel = new TextBlock { Text = $"Толщина новых проводов: ×{_board.WireThickness:F1}" };
+        var thickSlider = new Slider { Minimum = 0.6, Maximum = 2.4, Value = _board.WireThickness, TickFrequency = 0.2 };
+        thickSlider.ValueChanged += (_, ev) =>
+        {
+            _board.WireThickness = ev.NewValue;
+            thickLabel.Text = $"Толщина новых проводов: ×{ev.NewValue:F1}";
+            _board.InvalidateVisual();
+        };
+        SideContent.Children.Add(thickLabel);
+        SideContent.Children.Add(thickSlider);
+        SideContent.Children.Add(new TextBlock
+        {
+            Text = "В режиме провода колесо мыши — высота звена над платой.\nГорячие клавиши: 1–7 режимы, R — повернуть деталь, Del — удалить, F — вписать плату.",
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 2, 0, 0)
-        };
-        SideContent.Children.Add(solderHint);
+            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184))
+        });
 
         SideContent.Children.Add(SectionTitle("ЗВУК И ВИД"));
         var musicRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
@@ -269,6 +382,9 @@ public partial class MainWindow : Window
         var resetBtn = new Button { Content = "Сброс камеры и поворота" };
         resetBtn.Click += (_, _) => _board.ResetView();
         SideContent.Children.Add(resetBtn);
+        var fitBtn = new Button { Content = "Вписать плату (F)" };
+        fitBtn.Click += (_, _) => _board.FitView();
+        SideContent.Children.Add(fitBtn);
 
         SideContent.Children.Add(SectionTitle("ЗАМЕРЫ (шаг отверстий 2.54 мм)"));
         var clearMeas = new Button { Content = "Очистить замеры" };
@@ -318,11 +434,11 @@ public partial class MainWindow : Window
          "Кнопка «＋ Добавить» сверху: деталь перетаскивается мышкой на плату. Режим «↔ Деталь» (слева) двигает детали по плате, «✋ Плата» — саму плату.",
          "Добавьте светодиод и резистор и подвиньте их режимом «Деталь».", "Move"),
         ("Провода по звеньям",
-         "ЛКМ ставит звено, колесо мыши меняет длину следующего звена (подпись у курсора), ПКМ завершает провод. Линия идёт только по вашим точкам — без привязки к пинам, а подписи контактов напечатаны прямо на текстолите.",
-         "Проведите провод от батареи к ESP32 тремя-четырьмя звеньями.", "Wire"),
-        ("Пайка — это температура",
-         "В «Инструментах» выставьте жало 320–380°C и включите флюс — пайка будет блестящей. Холодная пайка (<280°C) трескается, перегрев (>430°C) жжёт плату. Сторона линий — Top/Bottom.",
-         "Поставьте режим «Пайка» слева и припаяйте резистор к светодиоду.", "Solder"),
+         "ЛКМ ставит звено, колесо мыши меняет ВЫСОТУ звена над платой (как близко оно к камере), ПКМ завершает провод. Узлы готовых проводов можно перетаскивать мышкой.",
+         "Проведите провод от батареи к ESP32 тремя-четырьмя звеньями разной высоты.", "Wire"),
+        ("Провода сами находят контакты",
+         "Отдельной пайки нет: подведите конец провода к контакту детали — он сам прилипнет (голубое кольцо «контакт!») и соединится. Все контакты подписаны на плате, у ESP32 их 30. Толщина проводов — ползунком в Инструментах.",
+         "Соедините «+» батареи с VIN, а «−» — с GND на ESP32.", "Wire"),
         ("Корпус, низ платы, замер",
          "«Инструменты → Корпус платы»: акрил с прозрачной крышкой, чёрный ABS или металл. «Смотреть НИЗ» — обратная сторона. Режим «Замер»: два клика — расстояние в миллиметрах.",
          "Добавьте акриловый корпус и замерьте диагональ платы.", "Measure"),
@@ -330,7 +446,7 @@ public partial class MainWindow : Window
          "«⌨ Прошивка» сверху: примеры кода или свой, кнопка «▶ Запуск». Панель ESP показывает живые HIGH/LOW, в режиме «Симуляция» кликаются кнопка и потенциометр на плате. Проект — «💾 Проект».",
          "Запустите демо-прошивку и посмотрите, как мигает D13.", "Sim"),
         ("Готово!",
-         "Вы знаете всё основное: камера, детали, провода звеньями, пайка, корпус, замеры и прошивка. Туториал всегда доступен кнопкой «🎓 Туториал» сверху.",
+         "Вы знаете всё основное: камера, детали, провода, контакты, корпус, замеры и прошивка. Туториал всегда доступен кнопкой «🎓 Туториал» сверху.",
          "Удачных схем! Дальше — «Инструменты» и кнопка «Демо» для готовой схемы.", "Camera"),
     };
 
@@ -710,8 +826,8 @@ public partial class MainWindow : Window
             "Camera" => "Камера: тащите левой кнопкой • колесо — масштаб",
             "MoveBoard" => "Перемещение платы: тащите левой кнопкой",
             "Move" => "Перемещение детали: перетащите её мышкой",
-            "Wire" => $"Провод звеньями: ЛКМ — звено • колесо — длина звена ({_board.LinkLengthCells:F1} кл.) • ПКМ — завершить",
-            "Solder" => $"Пайка звеньями: ЛКМ — звено • колесо — длина ({_board.LinkLengthCells:F1} кл.) • ПКМ — готово. Качество от температуры",
+            "Wire" => $"Провод: ЛКМ — звено (у контакта прилипнет) • колесо — высота звена ({_board.LinkHeightCells:F1} кл.) • ПКМ — завершить • узлы таскаются",
+            "Solder" => "Пайка убрана: просто ведите провода к контактам",
             "Sim" => "Симуляция: клик по кнопке/потенциометру на плате",
             "Measure" => "Замер: клик точка → клик точка (по отверстиям 2.54 мм)",
             "Delete" => "Удаление: клик по детали",
@@ -720,7 +836,7 @@ public partial class MainWindow : Window
         var rail = new Dictionary<string, Button>
         {
             ["Camera"] = RailCamera, ["MoveBoard"] = RailMoveBoard, ["Move"] = RailMove,
-            ["Wire"] = RailWire, ["Solder"] = RailSolder, ["Sim"] = RailSim,
+            ["Wire"] = RailWire, ["Sim"] = RailSim,
             ["Measure"] = RailMeasure, ["Delete"] = RailDelete
         };
         foreach (var kv in rail)

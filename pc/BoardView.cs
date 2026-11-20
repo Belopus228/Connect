@@ -34,8 +34,19 @@ public sealed class BoardView : FrameworkElement
     private readonly List<FreePoint> _chain = new();
     private bool _chainActive;
     private FreePoint _chainCursor = new(0, 0);
-    /// <summary>Длина следующего звена провода в клетках платы (колесо мыши).</summary>
-    public double LinkLengthCells { get; set; } = 3.0;
+    private FreeWire _dragWire;
+    private int _dragNodeIndex = -1;
+    private string _gizmoAxis;
+    private (double, double) _gizmoStart;
+    private (int, int) _gizmoOrig;
+    private PlacedComponent _heldButton;
+    private PlacedComponent _potDrag;
+    private Point _potStartMouse;
+    private int _potStartVal;
+    /// <summary>Высота следующего звена над платой (колесо мыши): как близко звено к камере.</summary>
+    public double LinkHeightCells { get; set; } = 1.0;
+    /// <summary>Толщина новых проводов (множитель).</summary>
+    public double WireThickness { get; set; } = 1.0;
     private PlacedComponent _dragComp;
     private (double, double) _dragOffset;
     private Point _lastMouse;
@@ -277,14 +288,16 @@ public sealed class BoardView : FrameworkElement
                 var sp = Project(np.X, np.Y, 0.5);
                 dc.DrawEllipse(Brush("#facc15"), PenOf("#111827", 1), sp, 3.4, 3.4);
             }
-            var ep = Project(end.X, end.Y, 0.5);
-            dc.DrawEllipse(null, PenOf("#facc15", 1.6), ep, 5.5, 5.5);
-            Text(dc, $"звено {LinkLengthCells:F1} кл. = {LinkLengthCells * 2.54:F1} мм", new Point(ep.X, ep.Y - 13), 8, "#facc15", bold: true);
+            bool snapped = SnapPoint(_chainCursor).Snapped;
+            var ep = Project(end.X, end.Y, Math.Max(0.5, end.Z));
+            dc.DrawEllipse(null, PenOf(snapped ? "#22d3ee" : "#facc15", 1.8), ep, snapped ? 8 : 5.5, snapped ? 8 : 5.5);
+            Text(dc, snapped ? "контакт!" : $"высота звена {LinkHeightCells:F1} кл.", new Point(ep.X, ep.Y - 13), 8, snapped ? "#22d3ee" : "#facc15", bold: true);
         }
         DrawCaseFront(dc);
         DrawContactLabels(dc, bottom);
         // подписи: маленькие, только выбранное и экраны
         DrawLabels(dc, state, bottom);
+        DrawGizmo(dc);
         // замеры
         DrawMeasurements(dc);
         dc.Pop();
@@ -566,6 +579,16 @@ public sealed class BoardView : FrameworkElement
                 m.CylZ(1.5, 0.5, zt, zt + 0.5, 0.4, "#c0c6ce", 12);
                 m.CylZ(3.5, 0.5, zt, zt + 0.5, 0.4, "#616161", 12);
                 break;
+            case "batAA1000":
+            case "batAA1800":
+            {
+                string cellCol = c.Type == "batAA1000" ? "#1565c0" : "#ef6c00";
+                m.CylX(0.30, w - 0.30, h / 2.0, 1.30, 1.05, cellCol, 22);
+                m.CylX(w * 0.40, w * 0.60, h / 2.0, 1.30, 1.08, "#eceff1", 22);
+                m.CylX(w - 0.55, w - 0.30, h / 2.0, 1.30, 1.02, "#9aa0a6", 22);
+                m.CylX(w - 0.30, w + 0.02, h / 2.0, 1.30, 0.38, "#e8eaed", 12);
+                break;
+            }
             case "lipo":
                 m.Box(0, 0, 0.2, w, h, zt * 0.7, "#f9a825");
                 m.Box(w * 0.08, h * 0.1, zt * 0.7, w * 0.92, h * 0.9, zt * 0.85, "#f57f17");
@@ -638,6 +661,13 @@ public sealed class BoardView : FrameworkElement
             Text(dc, "+", ProjectLocal(c, w - 0.45, h / 2.0, 3.30), 10, "#ffffff", bold: true);
             Text(dc, "18650", ProjectLocal(c, w / 2.0, h / 2.0, 3.25), 6, "#e8f5e9", bold: true);
         }
+        foreach (var c in Data.Components.Where(c => c.Type is "batAA1000" or "batAA1800"))
+        {
+            var (w, h) = (c.Def.W, c.Def.H);
+            Text(dc, c.Type == "batAA1000" ? "AA 1000 mAh" : "AA 1800 mAh",
+                ProjectLocal(c, w / 2.0, h / 2.0, 2.55), 6, "#ffffff", bold: true);
+            Text(dc, "+", ProjectLocal(c, w - 0.35, h / 2.0, 2.45), 9, "#ffffff", bold: true);
+        }
         foreach (var c in Data.Components.Where(c => c.Type == "led"))
         {
             var (w, h) = (c.Def.W, c.Def.H);
@@ -661,10 +691,11 @@ public sealed class BoardView : FrameworkElement
     private void DrawCaseBack(DrawingContext dc)
     {
         if (Data.CaseType is null or "None") return;
+        double cm = Data.CaseMargin;
         var tray = new[]
         {
-            Project(-1.2, -1.2, -0.05), Project(Data.Cols + 1.2, -1.2, -0.05),
-            Project(Data.Cols + 1.2, Data.Rows + 1.2, -0.05), Project(-1.2, Data.Rows + 1.2, -0.05)
+            Project(-cm, -cm, -0.05), Project(Data.Cols + cm, -cm, -0.05),
+            Project(Data.Cols + cm, Data.Rows + cm, -0.05), Project(-cm, Data.Rows + cm, -0.05)
         };
         var (fill, alpha) = Data.CaseType switch
         {
@@ -678,8 +709,8 @@ public sealed class BoardView : FrameworkElement
     private void DrawCaseFront(DrawingContext dc)
     {
         if (Data.CaseType is null or "None") return;
-        const double hz = 4.6;
-        double x0 = -1.2, y0 = -1.2, x1 = Data.Cols + 1.2, y1 = Data.Rows + 1.2;
+        double hz = Data.CaseHeight;
+        double x0 = -Data.CaseMargin, y0 = -Data.CaseMargin, x1 = Data.Cols + Data.CaseMargin, y1 = Data.Rows + Data.CaseMargin;
         var (col, alpha) = Data.CaseType switch
         {
             "Acrylic" => ("#dff6ff", (byte)60),
@@ -716,18 +747,19 @@ public sealed class BoardView : FrameworkElement
         bool activeSide = (fw.Side == "Top") != bottom;
         byte alpha = preview ? (byte)230 : activeSide ? (byte)255 : (byte)70;
         bool solder = fw.Style == "solder";
-        double baseZ = solder ? 0.13 : (fw.Side == "Bottom" ? 0.22 : 0.80);
+        double th = fw.Thickness <= 0 ? 1.0 : fw.Thickness;
+        double Ez(FreePoint fp) => solder ? 0.13 : (fp.Z > 0.05 ? fp.Z : (fw.Side == "Bottom" ? 0.22 : 0.80));
 
-        // середина каждого звена чуть приподнята: провод пружинит, а не лежит плашмя
+        // середина звена чуть выше узлов: провод пружинит, а не лежит плашмя
         var path = new List<(double X, double Y, double Z)>();
         for (int i = 0; i < fw.Points.Count; i++)
         {
             var pt = fw.Points[i];
-            path.Add((pt.X, pt.Y, baseZ));
+            path.Add((pt.X, pt.Y, Ez(pt)));
             if (i + 1 < fw.Points.Count)
             {
                 var q = fw.Points[i + 1];
-                path.Add(((pt.X + q.X) / 2, (pt.Y + q.Y) / 2, baseZ + (solder ? 0.03 : 0.28)));
+                path.Add(((pt.X + q.X) / 2, (pt.Y + q.Y) / 2, (Ez(pt) + Ez(q)) / 2 + (solder ? 0.03 : 0.15)));
             }
         }
         var pts = path.Select(p => Project(p.X, p.Y, p.Z)).ToArray();
@@ -748,13 +780,13 @@ public sealed class BoardView : FrameworkElement
         }
 
         // мягкая тень на текстолите
-        DrawPolyline(dc, shadow, RoundPen("#000000", solder ? 5.5 : 6.0, (byte)(alpha * 0.28)));
+        DrawPolyline(dc, shadow, RoundPen("#000000", (solder ? 5.5 : 6.0) * th, (byte)(alpha * 0.28)));
 
         if (solder)
         {
-            DrawPolyline(dc, pts, RoundPen("#6d4c41", 5.2, (byte)(alpha * 0.45)));  // ореол флюса/меди
+            DrawPolyline(dc, pts, RoundPen("#6d4c41", 5.2 * th, (byte)(alpha * 0.45)));  // ореол флюса/меди
             string col = fw.Quality switch { "cold" => "#7d838a", "hot" => "#5f564e", _ => "#c3ccd2" };
-            DrawPolyline(dc, pts, RoundPen(col, 3.8, alpha));                         // лужёная жила
+            DrawPolyline(dc, pts, RoundPen(col, 3.8 * th, alpha));                         // лужёная жила
             if (fw.Quality == "good" && activeSide)
             {
                 var hl = pts.Select(p => new Point(p.X - 1.1, p.Y - 1.2)).ToArray();
@@ -767,15 +799,15 @@ public sealed class BoardView : FrameworkElement
         }
         else
         {
-            DrawPolyline(dc, pts, RoundPen("#101418", 4.8, (byte)(alpha * 0.55)));    // тёмный край изоляции
-            DrawPolyline(dc, pts, RoundPen(fw.Color, 3.1, alpha));                    // сама изоляция
+            DrawPolyline(dc, pts, RoundPen("#101418", 4.8 * th, (byte)(alpha * 0.55)));    // тёмный край изоляции
+            DrawPolyline(dc, pts, RoundPen(fw.Color, 3.1 * th, alpha));                    // сама изоляция
             var hl = pts.Select(p => new Point(p.X - 1.3, p.Y - 1.5)).ToArray();
             DrawPolyline(dc, hl, RoundPen("#ffffff", 1.0, (byte)(alpha * 0.5)));      // блик по изоляции
             // стыки звеньев — лёгкие утолщения, как у настоящего провода
             foreach (var p in fw.Points.Skip(1).Take(Math.Max(0, fw.Points.Count - 2)))
             {
-                var sp = Project(p.X, p.Y, baseZ);
-                dc.DrawEllipse(Brush(fw.Color, alpha), PenOf("#101418", 0.8, (byte)(alpha * 0.6)), sp, 3.1, 2.7);
+                var sp = Project(p.X, p.Y, Ez(p));
+                dc.DrawEllipse(Brush(fw.Color, alpha), PenOf("#101418", 0.8, (byte)(alpha * 0.6)), sp, 3.1 * th, 2.7 * th);
             }
             // зачищенные концы — голая жила
             DrawStrippedEnd(dc, pts[0], pts[1], alpha);
@@ -915,12 +947,13 @@ public sealed class BoardView : FrameworkElement
             var at = Project(c.X + ew / 2.0, c.Y + eh / 2.0, z);
             string label = c.Type == "resistor" ? $"R {c.Prop("ohms", "220")}Ω" : c.Def.Short;
             Text(dc, label, at, 7.5, "#e2e8f0");
+            // рамка выбора лежит на плате у основания детали и чуть шире неё
             var poly = new[]
             {
-                Project(c.X, c.Y, z - 0.3), Project(c.X + ew, c.Y, z - 0.3),
-                Project(c.X + ew, c.Y + eh, z - 0.3), Project(c.X, c.Y + eh, z - 0.3)
+                Project(c.X - 0.35, c.Y - 0.35, 0.30), Project(c.X + ew + 0.35, c.Y - 0.35, 0.30),
+                Project(c.X + ew + 0.35, c.Y + eh + 0.35, 0.30), Project(c.X - 0.35, c.Y + eh + 0.35, 0.30)
             };
-            Poly(dc, poly, null, PenOf("#ffff00", 1.6));
+            Poly(dc, poly, null, PenOf("#facc15", 1.8));
         }
     }
 
@@ -970,15 +1003,23 @@ public sealed class BoardView : FrameworkElement
     private FreePoint ClampToBoard((double, double) w) =>
         new(Math.Clamp(w.Item1, 0, Data.Cols), Math.Clamp(w.Item2, 0, Data.Rows));
 
-    private FreePoint PreviewEnd()
+    private (FreePoint Pt, bool Snapped) SnapPoint(FreePoint raw)
     {
-        var last = _chain[^1];
-        double dx = _chainCursor.X - last.X, dy = _chainCursor.Y - last.Y;
-        double len = Math.Sqrt(dx * dx + dy * dy);
-        if (len <= LinkLengthCells || len < 1e-9) return _chainCursor;
-        double k = LinkLengthCells / len;
-        return new FreePoint(last.X + dx * k, last.Y + dy * k);
+        // провод сам доводится до ближайшего контакта, если курсор рядом с ним
+        (double, double)? best = null;
+        double bestD = 0.90;
+        foreach (var c in Data.Components)
+            foreach (var pin in c.Def.Pins)
+            {
+                var (px, py) = PinWorld(c, pin);
+                double d = Math.Sqrt((raw.X - px) * (raw.X - px) + (raw.Y - py) * (raw.Y - py));
+                if (d < bestD) { bestD = d; best = (px, py); }
+            }
+        if (best is { } b) return (new FreePoint(b.Item1, b.Item2) { Z = LinkHeightCells }, true);
+        return (new FreePoint(raw.X, raw.Y) { Z = LinkHeightCells }, false);
     }
+
+    private FreePoint PreviewEnd() => SnapPoint(_chainCursor).Pt;
 
     private void FinishChain()
     {
@@ -998,6 +1039,7 @@ public sealed class BoardView : FrameworkElement
                 Points = new List<FreePoint>(_chain),
                 Style = solder ? "solder" : "wire",
                 Color = solder ? "#90a4ae" : WireColors[Data.FreeWires.Count % WireColors.Length],
+                Thickness = WireThickness,
                 Side = WireSide,
                 Quality = solder ? SolderQuality() : "good",
                 TempC = SolderTempC,
@@ -1025,6 +1067,83 @@ public sealed class BoardView : FrameworkElement
             LogMessage?.Invoke("✒ Линия отменена (нужно минимум 2 звена)");
         }
         _chain.Clear();
+    }
+
+    public void RotateComponent(PlacedComponent c)
+    {
+        if (c == null) return;
+        c.Rot = (c.Rot + 90) % 360;
+        var (ew, eh) = c.EffSize;
+        c.X = Math.Clamp(c.X, 0, Math.Max(0, Data.Cols - ew));
+        c.Y = Math.Clamp(c.Y, 0, Math.Max(0, Data.Rows - eh));
+        LogMessage?.Invoke($"⟳ {c.Def.Title}: поворот {c.Rot}°");
+        StateChanged?.Invoke();
+        InvalidateVisual();
+    }
+
+    public void FitView()
+    {
+        Pan = new Point(0, 0);
+        double zx = ActualWidth / Math.Max(1, Data.Cols * Cell * 1.55);
+        double zy = ActualHeight / Math.Max(1, Data.Rows * Cell * Math.Max(Tilt, 0.2) * 1.55);
+        Zoom = Math.Clamp(Math.Min(zx, zy), 0.55, 2.2);
+        InvalidateVisual();
+    }
+
+    // ---- стрелки перемещения как в Blender: X — красная, Y — зелёная, ⟳ — поворот ----
+    private void DrawArrow(DrawingContext dc, Point a, Point b, string col)
+    {
+        var pen = PenOf(col, 3.2);
+        pen.StartLineCap = PenLineCap.Round;
+        dc.DrawLine(pen, a, b);
+        double dx = b.X - a.X, dy = b.Y - a.Y;
+        double len = Math.Max(1, Math.Sqrt(dx * dx + dy * dy));
+        double ux = dx / len, uy = dy / len, px = -uy, py = ux;
+        var l = new Point(b.X - ux * 13 + px * 5.5, b.Y - uy * 13 + py * 5.5);
+        var r = new Point(b.X - ux * 13 - px * 5.5, b.Y - uy * 13 - py * 5.5);
+        Poly(dc, new[] { b, l, r }, Brush(col), PenOf("#111827", 0.8));
+    }
+
+    private void DrawGizmo(DrawingContext dc)
+    {
+        if (Selected == null || Mode != "Move") return;
+        var c = Selected;
+        var (ew, eh) = c.EffSize;
+        double cx = c.X + ew / 2.0, cy = c.Y + eh / 2.0;
+        var ctr = Project(cx, cy, 1.1);
+        DrawArrow(dc, ctr, Project(cx + 3.4, cy, 1.1), "#ef4444"); // +X
+        DrawArrow(dc, ctr, Project(cx, cy + 3.4, 1.1), "#22c55e"); // +Y
+        dc.DrawEllipse(Brush("#f8fafc"), PenOf("#111827", 1.2), ctr, 5, 5);
+        var rp = Project(cx, cy, c.Def.HeightMm / 2.54 + 2.1);
+        dc.DrawEllipse(Brush("#f59e0b", 220), PenOf("#111827", 1.2), rp, 9.5, 9.5);
+        Text(dc, "⟳", rp, 10, "#111827", bold: true);
+    }
+
+    private string HitGizmo(Point s)
+    {
+        if (Selected == null) return null;
+        var c = Selected;
+        var (ew, eh) = c.EffSize;
+        double cx = c.X + ew / 2.0, cy = c.Y + eh / 2.0;
+        var rp = Project(cx, cy, c.Def.HeightMm / 2.54 + 2.1);
+        if (Math.Sqrt((s.X - rp.X) * (s.X - rp.X) + (s.Y - rp.Y) * (s.Y - rp.Y)) < 12) return "ROT";
+        var ctr = Project(cx, cy, 1.1);
+        if (PointSegmentDistance(s, ctr, Project(cx + 3.4, cy, 1.1)) < 9) return "X";
+        if (PointSegmentDistance(s, ctr, Project(cx, cy + 3.4, 1.1)) < 9) return "Y";
+        return null;
+    }
+
+    private (FreeWire, int)? HitNode(Point s)
+    {
+        foreach (var fw in Data.FreeWires.AsEnumerable().Reverse())
+            for (int i = 0; i < fw.Points.Count; i++)
+            {
+                var pt = fw.Points[i];
+                var sp = Project(pt.X, pt.Y, Math.Max(0.4, pt.Z));
+                if (Math.Sqrt((s.X - sp.X) * (s.X - sp.X) + (s.Y - sp.Y) * (s.Y - sp.Y)) < 10)
+                    return (fw, i);
+            }
+        return null;
     }
 
     private FreeWire HitFreeWire(Point s)
@@ -1139,25 +1258,45 @@ public sealed class BoardView : FrameworkElement
         }
         if (Mode is "Wire" or "Solder")
         {
-            // Укладка по звеньям: ЛКМ ставит звено, ПКМ завершает. Без снапа.
-            var pt = ClampToBoard(Unproject(pos));
-            _chainCursor = pt;
+            var raw = ClampToBoard(Unproject(pos));
+            _chainCursor = raw;
             if (!_chainActive)
             {
+                // схватить узел готового провода и таскать его
+                if (HitNode(pos) is { } hn)
+                {
+                    _dragWire = hn.Item1;
+                    _dragNodeIndex = hn.Item2;
+                    InvalidateVisual();
+                    return;
+                }
                 _chain.Clear();
-                _chain.Add(pt);
+                _chain.Add(SnapPoint(raw).Pt);
                 _chainActive = true;
-                LogMessage?.Invoke("✒ Начало линии: ЛКМ — поставить звено, колесо — длина звена, ПКМ — завершить");
+                LogMessage?.Invoke("✒ Линия: ЛКМ — звено (у контакта само прилипнет), колесо — высота звена, ПКМ — завершить. Узлы проводов можно таскать.");
             }
             else
             {
                 var endPt = PreviewEnd();
                 var last = _chain[^1];
-                double d = Math.Abs(endPt.X - last.X) + Math.Abs(endPt.Y - last.Y);
-                if (d >= 0.12) _chain.Add(endPt);
+                if (Math.Abs(endPt.X - last.X) + Math.Abs(endPt.Y - last.Y) >= 0.05)
+                    _chain.Add(endPt);
             }
             InvalidateVisual();
             return;
+        }
+        if (Mode == "Move" && Selected != null)
+        {
+            var g = HitGizmo(pos);
+            if (g == "ROT") { RotateComponent(Selected); InvalidateVisual(); return; }
+            if (g is "X" or "Y")
+            {
+                _gizmoAxis = g;
+                _gizmoStart = Unproject(pos);
+                _gizmoOrig = (Selected.X, Selected.Y);
+                InvalidateVisual();
+                return;
+            }
         }
         var hc = HitComponent(pos);
         switch (Mode)
@@ -1191,14 +1330,16 @@ public sealed class BoardView : FrameworkElement
                 {
                     if (hc.Type == "button")
                     {
-                        if (!Data.Pressed.Add(hc.Id)) Data.Pressed.Remove(hc.Id);
-                        LogMessage?.Invoke(Data.Pressed.Contains(hc.Id) ? "🔘 Кнопка НАЖАТА" : "🔘 Кнопка отпущена");
+                        Data.Pressed.Add(hc.Id);
+                        _heldButton = hc;
+                        LogMessage?.Invoke("🔘 Кнопка зажата (держите мышь)");
                     }
                     else if (hc.Type == "pot")
                     {
-                        int v = (int.Parse(hc.Prop("value", "512")) + 128) % 1024;
-                        hc.Props["value"] = v.ToString();
-                        LogMessage?.Invoke($"🎛 Потенциометр: {v}/1023");
+                        _potDrag = hc;
+                        _potStartMouse = pos;
+                        _potStartVal = int.TryParse(hc.Prop("value", "512"), out var pv) ? pv : 512;
+                        LogMessage?.Invoke("🎛 Тяните мышь вверх/вниз — потенциометр крутится");
                     }
                     else Selected = hc;
                     StateChanged?.Invoke();
@@ -1230,7 +1371,31 @@ public sealed class BoardView : FrameworkElement
         _hoverBoard = Mode == "Measure" ? SnapToHole(pos) : null;
 
         _chainCursor = ClampToBoard(Unproject(pos));
-        if (_chainActive)
+        if (_dragWire != null && _dragNodeIndex >= 0 && e.LeftButton == MouseButtonState.Pressed)
+        {
+            var npt = ClampToBoard(Unproject(pos));
+            _dragWire.Points[_dragNodeIndex].X = npt.X;
+            _dragWire.Points[_dragNodeIndex].Y = npt.Y;
+            InvalidateVisual();
+        }
+        else if (_potDrag != null && e.LeftButton == MouseButtonState.Pressed)
+        {
+            int v = Math.Clamp(_potStartVal + (int)((_potStartMouse.Y - pos.Y) * 4 + (pos.X - _potStartMouse.X) * 2), 0, 1023);
+            _potDrag.Props["value"] = v.ToString();
+            InvalidateVisual();
+        }
+        else if (_gizmoAxis != null && Selected != null && e.LeftButton == MouseButtonState.Pressed)
+        {
+            var (wx, wy) = Unproject(pos);
+            var (ew, eh) = Selected.EffSize;
+            int nx = _gizmoOrig.Item1, ny = _gizmoOrig.Item2;
+            if (_gizmoAxis == "X") nx += (int)Math.Round(wx - _gizmoStart.Item1);
+            else ny += (int)Math.Round(wy - _gizmoStart.Item2);
+            Selected.X = Math.Clamp(nx, 0, Data.Cols - ew);
+            Selected.Y = Math.Clamp(ny, 0, Data.Rows - eh);
+            InvalidateVisual();
+        }
+        else if (_chainActive)
         {
             InvalidateVisual();
         }
@@ -1266,6 +1431,21 @@ public sealed class BoardView : FrameworkElement
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonUp(e);
+        if (_dragWire != null) { _dragWire = null; _dragNodeIndex = -1; StateChanged?.Invoke(); }
+        if (_gizmoAxis != null) { _gizmoAxis = null; StateChanged?.Invoke(); }
+        if (_heldButton != null)
+        {
+            Data.Pressed.Remove(_heldButton.Id);
+            LogMessage?.Invoke("🔘 Кнопка отпущена");
+            _heldButton = null;
+            StateChanged?.Invoke();
+        }
+        if (_potDrag != null)
+        {
+            LogMessage?.Invoke($"🎛 Потенциометр: {_potDrag.Prop("value", "512")}/1023");
+            _potDrag = null;
+            StateChanged?.Invoke();
+        }
         bool wasDragging = _dragComp != null;
         _dragComp = null;
         _panning = false;
@@ -1310,8 +1490,8 @@ public sealed class BoardView : FrameworkElement
         base.OnMouseWheel(e);
         if (Mode is "Wire" or "Solder")
         {
-            // Во время укладки колесо регулирует дальность следующего звена.
-            LinkLengthCells = Math.Clamp(LinkLengthCells + (e.Delta > 0 ? 0.25 : -0.25), 0.5, 10.0);
+            // Во время укладки колесо регулирует высоту звена: как близко оно к камере.
+            LinkHeightCells = Math.Clamp(LinkHeightCells + (e.Delta > 0 ? 0.15 : -0.15), 0.15, 4.0);
             StateChanged?.Invoke();
         }
         else

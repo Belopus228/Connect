@@ -1,7 +1,7 @@
 <Window x:Class="ConnectPC.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Connect — 3D Electronics Simulator  •  v2.4"
+        Title="Connect — 3D Electronics Simulator  •  v2.5"
         Width="1240" Height="780" MinWidth="980" MinHeight="620"
         WindowStartupLocation="CenterScreen"
         Background="#10161c" Foreground="#dbeafe"
@@ -91,7 +91,7 @@
             <DockPanel Margin="8,6">
                 <StackPanel DockPanel.Dock="Left" Orientation="Vertical" VerticalAlignment="Center">
                     <TextBlock Text="CONNECT" FontSize="22" FontWeight="Bold" Foreground="#4fc3f7"/>
-                    <TextBlock Text="3D Electronics Simulator — v2.4 (нативная Windows-сборка)" FontSize="9.5" Foreground="#94a3b8"/>
+                    <TextBlock Text="3D Electronics Simulator — v2.5 (нативная Windows-сборка)" FontSize="9.5" Foreground="#94a3b8"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Button x:Name="TutorialBtn" Content="🎓 Туториал" Click="TutorialBtn_Click"/>
@@ -142,9 +142,6 @@
                     </Button>
                     <Button x:Name="RailWire" Tag="Wire" Click="ModeRail_Click" Margin="2,3" Padding="2,6">
                         <StackPanel><TextBlock Text="✒" FontSize="16" HorizontalAlignment="Center"/><TextBlock Text="Провод" FontSize="8.5" HorizontalAlignment="Center"/></StackPanel>
-                    </Button>
-                    <Button x:Name="RailSolder" Tag="Solder" Click="ModeRail_Click" Margin="2,3" Padding="2,6">
-                        <StackPanel><TextBlock Text="🔥" FontSize="16" HorizontalAlignment="Center"/><TextBlock Text="Пайка" FontSize="8.5" HorizontalAlignment="Center"/></StackPanel>
                     </Button>
                     <Button x:Name="RailSim" Tag="Sim" Click="ModeRail_Click" Margin="2,3" Padding="2,6">
                         <StackPanel><TextBlock Text="🖱" FontSize="16" HorizontalAlignment="Center"/><TextBlock Text="Симул." FontSize="8.5" HorizontalAlignment="Center"/></StackPanel>
