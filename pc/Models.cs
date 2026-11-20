@@ -179,6 +179,8 @@ public sealed class ProjectData
     public double CaseMargin { get; set; } = 1.2;
     /// <summary>Высота стенок корпуса в клетках.</summary>
     public double CaseHeight { get; set; } = 4.6;
+    /// <summary>Макетная плата необязательна: можно строить схему прямо в пространстве.</summary>
+    public bool ShowBoard { get; set; } = true;
     public string Code { get; set; } = FirmwareExamples.All[0].Code;
     // runtime (не сериализуются целиком, но Json не повредит)
     public Dictionary<string, int> PinOutputs { get; set; } = new();
@@ -298,7 +300,7 @@ public sealed class ProjectData
         var dto = new ProjectData
         {
             Components = Components, Wires = Wires, FreeWires = FreeWires, Measurements = Measurements,
-            Code = Code, CaseType = CaseType, CaseMargin = CaseMargin, CaseHeight = CaseHeight,
+            Code = Code, CaseType = CaseType, CaseMargin = CaseMargin, CaseHeight = CaseHeight, ShowBoard = ShowBoard,
             Cols = Cols, Rows = Rows
         };
         File.WriteAllText(path, JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));

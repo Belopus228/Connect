@@ -47,6 +47,10 @@ public sealed class BoardView : FrameworkElement
     public double LinkHeightCells { get; set; } = 1.0;
     /// <summary>Толщина новых проводов (множитель).</summary>
     public double WireThickness { get; set; } = 1.0;
+    /// <summary>Перспективная камера: ближнее крупнее, дальнее мельче — настоящий 3D.</summary>
+    public bool UsePerspective { get; set; } = true;
+    private PlacedComponent _hoverComp;
+    private (FreeWire, int)? _hoverNode;
     private PlacedComponent _dragComp;
     private (double, double) _dragOffset;
     private Point _lastMouse;
@@ -102,22 +106,40 @@ public sealed class BoardView : FrameworkElement
         double dx = ux - cx, dy = uy - cy;
         double xr = dx * Math.Cos(a) - dy * Math.Sin(a);
         double yr = dx * Math.Sin(a) + dy * Math.Cos(a);
-        double sx = ActualWidth / 2 + Pan.X + (xr - yr) * Cell * Zoom;
-        double sy = ActualHeight / 2 + Pan.Y + (xr + yr) * Cell * Tilt * Zoom - wz * Cell * Zoom;
-        return (new Point(sx, sy), (xr + yr) + wz * 1.5);
+        double w = xr + yr + 2 * Tilt * wz; // глубина точки от камеры
+        double persp = UsePerspective ? 95.0 / (95.0 + w) : 1.0;
+        double sx = ActualWidth / 2 + Pan.X + (xr - yr) * Cell * Zoom * persp;
+        double sy = ActualHeight / 2 + Pan.Y + ((xr + yr) * Tilt - wz) * Cell * Zoom * persp;
+        return (new Point(sx, sy), w);
     }
 
     public (double, double) Unproject(Point s)
     {
+        // перспектива нелинейна — уточняем масштаб тремя итерациями
+        var r = UnprojectLinear(s, 1.0);
+        for (int i = 0; i < 3; i++)
+        {
+            var (ux, uy) = RotateBoardPoint(r.Item1, r.Item2);
+            double a = CameraAngle * Math.PI / 180.0;
+            double dx = ux - Data.Cols / 2.0, dy = uy - Data.Rows / 2.0;
+            double xr = dx * Math.Cos(a) - dy * Math.Sin(a);
+            double yr = dx * Math.Sin(a) + dy * Math.Cos(a);
+            double persp = UsePerspective ? 95.0 / (95.0 + xr + yr) : 1.0;
+            r = UnprojectLinear(s, persp);
+        }
+        return r;
+    }
+
+    private (double, double) UnprojectLinear(Point s, double persp)
+    {
         double a = CameraAngle * Math.PI / 180.0;
-        double aa = (s.X - ActualWidth / 2 - Pan.X) / (Cell * Zoom);
-        double bb = (s.Y - ActualHeight / 2 - Pan.Y) / (Cell * Tilt * Zoom);
+        double aa = (s.X - ActualWidth / 2 - Pan.X) / (Cell * Zoom * persp);
+        double bb = (s.Y - ActualHeight / 2 - Pan.Y) / (Cell * Tilt * Zoom * persp);
         double xr = (aa + bb) / 2, yr = (bb - aa) / 2;
         double dx = xr * Math.Cos(a) + yr * Math.Sin(a);
         double dy = -xr * Math.Sin(a) + yr * Math.Cos(a);
         double ux = dx + Data.Cols / 2.0, uy = dy + Data.Rows / 2.0;
         if (ViewSide == "Bottom") ux = Data.Cols - ux;
-        // обратный поворот платы
         double cx = Data.Cols / 2.0, cy = Data.Rows / 2.0;
         double ra = -BoardRotDeg * Math.PI / 180.0;
         double ddx = ux - cx, ddy = uy - cy;
@@ -222,6 +244,8 @@ public sealed class BoardView : FrameworkElement
         bool bottom = ViewSide == "Bottom";
         DrawCaseBack(dc);
 
+        if (Data.ShowBoard)
+        {
         // плата
         var bc = new[] { Project(0, 0), Project(Data.Cols, 0), Project(Data.Cols, Data.Rows), Project(0, Data.Rows) };
         var bcLow = bc.Select(p => new Point(p.X, p.Y + 7 * Zoom)).ToArray();
@@ -248,6 +272,8 @@ public sealed class BoardView : FrameworkElement
         DrawBoardTraces(dc, occupied);
         var silk = Project(1, Data.Rows - 0.6, 0.05);
         Text(dc, bottom ? "СОЛДЕРНАЯ СТОРОНА (BOTTOM)" : "CONNECT PCB • REV 2.0 • TOP", silk, 7, "#cfe8d4", center: false);
+        }
+        else DrawSpaceGrid(dc);
 
         // паяные дорожки активной стороны + чужие пунктиром
         foreach (var w in Data.Wires.Where(w => w.Style == "solder"))
@@ -297,6 +323,7 @@ public sealed class BoardView : FrameworkElement
         DrawContactLabels(dc, bottom);
         // подписи: маленькие, только выбранное и экраны
         DrawLabels(dc, state, bottom);
+        DrawHoverHighlight(dc);
         DrawGizmo(dc);
         // замеры
         DrawMeasurements(dc);
@@ -411,6 +438,45 @@ public sealed class BoardView : FrameworkElement
             default: rx = lx; ry = ly; break;
         }
         return (c.X + rx, c.Y + ry);
+    }
+
+    private void DrawSpaceGrid(DrawingContext dc)
+    {
+        // когда макетка выключена — схема парит над faint-сеткой пространства
+        var pen = PenOf("#2b4a63", 1.0, 80);
+        for (int gx = -4; gx <= Data.Cols + 4; gx += 4)
+            DrawPolyline(dc, new[] { Project(gx, -4, 0), Project(gx, Data.Rows + 4, 0) }, pen);
+        for (int gy = -4; gy <= Data.Rows + 4; gy += 4)
+            DrawPolyline(dc, new[] { Project(-4, gy, 0), Project(Data.Cols + 4, gy, 0) }, pen);
+    }
+
+    private void DrawHoverHighlight(DrawingContext dc)
+    {
+        // подсветка детали под курсором: с ней можно взаимодействовать
+        if (_hoverComp != null && _hoverComp != Selected)
+        {
+            var c = _hoverComp;
+            var (ew, eh) = c.EffSize;
+            var poly = new[]
+            {
+                Project(c.X - 0.30, c.Y - 0.30, 0.28), Project(c.X + ew + 0.30, c.Y - 0.30, 0.28),
+                Project(c.X + ew + 0.30, c.Y + eh + 0.30, 0.28), Project(c.X - 0.30, c.Y + eh + 0.30, 0.28)
+            };
+            Poly(dc, poly, Brush("#7dd3fc", 18), PenOf("#7dd3fc", 1.5));
+        }
+        // узлы проводов видны и подсвечиваются в режиме провода
+        if (Mode == "Wire")
+        {
+            foreach (var fw in Data.FreeWires)
+                for (int i = 0; i < fw.Points.Count; i++)
+                {
+                    var pt = fw.Points[i];
+                    var sp = Project(pt.X, pt.Y, Math.Max(0.45, pt.Z));
+                    bool hov = _hoverNode is { } hn && hn.Item1 == fw && hn.Item2 == i;
+                    dc.DrawEllipse(Brush("#f8fafc"), PenOf("#111827", 0.8), sp, hov ? 4.2 : 2.5, hov ? 4.2 : 2.5);
+                    if (hov) dc.DrawEllipse(null, PenOf("#22d3ee", 2), sp, 7.5, 7.5);
+                }
+        }
     }
 
     private void DrawBoardTraces(DrawingContext dc, HashSet<(int, int)> occupied)
@@ -686,7 +752,7 @@ public sealed class BoardView : FrameworkElement
     // ---------------- корпус платы ----------------
     private void DrawCaseBack(DrawingContext dc)
     {
-        if (Data.CaseType is null or "None") return;
+        if (Data.CaseType is null or "None" || !Data.ShowBoard) return;
         double cm = Data.CaseMargin;
         var tray = new[]
         {
@@ -704,7 +770,7 @@ public sealed class BoardView : FrameworkElement
 
     private void DrawCaseFront(DrawingContext dc)
     {
-        if (Data.CaseType is null or "None") return;
+        if (Data.CaseType is null or "None" || !Data.ShowBoard) return;
         double hz = Data.CaseHeight;
         double x0 = -Data.CaseMargin, y0 = -Data.CaseMargin, x1 = Data.Cols + Data.CaseMargin, y1 = Data.Rows + Data.CaseMargin;
         var (col, alpha) = Data.CaseType switch
@@ -1365,6 +1431,16 @@ public sealed class BoardView : FrameworkElement
         base.OnMouseMove(e);
         var pos = e.GetPosition(this);
         _hoverBoard = Mode == "Measure" ? SnapToHole(pos) : null;
+        // подсветка интерактива под курсором
+        var newHoverComp = (_dragComp == null && _dragWire == null) ? HitComponent(pos) : _hoverComp;
+        var newHoverNode = (Mode == "Wire" && !_chainActive) ? HitNode(pos) : null;
+        bool gizmoHover = Mode == "Move" && Selected != null && HitGizmo(pos) != null;
+        bool hoverChanged = newHoverComp != _hoverComp
+            || (newHoverNode?.Item1 != _hoverNode?.Item1) || (newHoverNode?.Item2 != _hoverNode?.Item2);
+        _hoverComp = newHoverComp;
+        _hoverNode = newHoverNode;
+        Cursor = (_hoverComp != null || _hoverNode != null || gizmoHover) ? Cursors.Hand : null;
+        if (hoverChanged) InvalidateVisual();
 
         _chainCursor = ClampToBoard(Unproject(pos));
         if (_dragWire != null && _dragNodeIndex >= 0 && e.LeftButton == MouseButtonState.Pressed)

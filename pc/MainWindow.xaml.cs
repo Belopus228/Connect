@@ -37,7 +37,7 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tutorial");
-        Log("✅ Connect v2.6 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.7 — нативная Windows-сборка открыта");
         Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
@@ -371,6 +371,14 @@ public partial class MainWindow : Window
         });
 
         SideContent.Children.Add(SectionTitle("ЗВУК И ВИД"));
+        var perspBox = new CheckBox { Content = "Перспективная камера (настоящий 3D)", IsChecked = _board.UsePerspective };
+        perspBox.Checked += (_, _) => { _board.UsePerspective = true; _board.InvalidateVisual(); };
+        perspBox.Unchecked += (_, _) => { _board.UsePerspective = false; _board.InvalidateVisual(); };
+        SideContent.Children.Add(perspBox);
+        var boardBox = new CheckBox { Content = "Макетная плата (можно выключить)", IsChecked = _board.Data.ShowBoard };
+        boardBox.Checked += (_, _) => { _board.Data.ShowBoard = true; _board.InvalidateVisual(); Log("Макетная плата показана"); };
+        boardBox.Unchecked += (_, _) => { _board.Data.ShowBoard = false; _board.InvalidateVisual(); Log("Макетная плата выключена — схема строится прямо в пространстве"); };
+        SideContent.Children.Add(boardBox);
         var musicRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         var mBtn = new Button { Content = _music.IsPlaying ? "🎵 Музыка: вкл" : "🎵 Музыка: выкл" };
         mBtn.Click += (_, _) => { _music.Toggle(); mBtn.Content = _music.IsPlaying ? "🎵 Музыка: вкл" : "🎵 Музыка: выкл"; };
