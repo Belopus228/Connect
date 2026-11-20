@@ -1150,20 +1150,26 @@ public sealed class BoardView : FrameworkElement
         InvalidateVisual();
     }
 
-    protected override void OnMouseMiddleButtonDown(MouseButtonEventArgs e)
+    protected override void OnMouseDown(MouseButtonEventArgs e)
     {
-        base.OnMouseMiddleButtonDown(e);
+        base.OnMouseDown(e);
         // Вращение камеры — зажатым колёсиком (средней кнопкой), в любом режиме.
-        _rotatingCam = true;
-        _lastMouse = e.GetPosition(this);
-        CaptureMouse();
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            _rotatingCam = true;
+            _lastMouse = e.GetPosition(this);
+            CaptureMouse();
+        }
     }
 
-    protected override void OnMouseMiddleButtonUp(MouseButtonEventArgs e)
+    protected override void OnMouseUp(MouseButtonEventArgs e)
     {
-        base.OnMouseMiddleButtonUp(e);
-        _rotatingCam = false;
-        ReleaseMouseCapture();
+        base.OnMouseUp(e);
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            _rotatingCam = false;
+            ReleaseMouseCapture();
+        }
     }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
