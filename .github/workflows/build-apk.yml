@@ -35,7 +35,17 @@ jobs:
           sdkmanager "platforms;android-34" "build-tools;34.0.0" || true
 
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build-log.txt
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build-log.txt
+          if-no-files-found: ignore
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
