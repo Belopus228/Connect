@@ -153,6 +153,94 @@ class Scene3DView @JvmOverloads constructor(
         faces.add(Face(pts, color, alpha))
     }
 
+    /** Вертикальный цилиндр (Z вверх) — кнопки, конденсаторы, штыри, валы. */
+    private fun addCylinderZ(faces: MutableList<Face>, cx: Float, cy: Float, z0: Float, r: Float, h: Float, color: Int, alpha: Int = 255, seg: Int = 14) {
+        val ring = (0 until seg).map { i ->
+            val a = (2.0 * Math.PI * i / seg).toFloat()
+            Vec(cx + r * cos(a), cy + r * sin(a), z0)
+        }
+        for (i in 0 until seg) {
+            val j = (i + 1) % seg
+            val a = ring[i]; val b = ring[j]
+            faces.add(Face(listOf(a, b, Vec(b.x, b.y, z0 + h), Vec(a.x, a.y, z0 + h)), color, alpha))
+        }
+        faces.add(Face(ring.map { Vec(it.x, it.y, z0 + h) }, color, alpha))
+    }
+
+    /** Горизонтальный цилиндр вдоль X — тело резистора, батарея 18650. */
+    private fun addCylinderX(faces: MutableList<Face>, x1: Float, x2: Float, cy: Float, cz: Float, r: Float, color: Int, alpha: Int = 255, seg: Int = 14) {
+        for (i in 0 until seg) {
+            val a1 = (2.0 * Math.PI * i / seg).toFloat()
+            val a2 = (2.0 * Math.PI * (i + 1) / seg).toFloat()
+            val p1 = Vec(x1, cy + r * cos(a1), cz + r * sin(a1))
+            val p2 = Vec(x1, cy + r * cos(a2), cz + r * sin(a2))
+            val p3 = Vec(x2, cy + r * cos(a2), cz + r * sin(a2))
+            val p4 = Vec(x2, cy + r * cos(a1), cz + r * sin(a1))
+            faces.add(Face(listOf(p1, p2, p3, p4), color, alpha))
+        }
+        val cap = (0 until seg).map { i ->
+            val a = (2.0 * Math.PI * i / seg).toFloat()
+            Vec(x2, cy + r * cos(a), cz + r * sin(a))
+        }
+        faces.add(Face(cap, color, alpha))
+    }
+
+    /** Полусфера — купол светодиода. cz — центр сферы (основание купола). */
+    private fun addDome(faces: MutableList<Face>, cx: Float, cy: Float, cz: Float, r: Float, color: Int, alpha: Int = 200) {
+        val rings = 5
+        val seg = 14
+        var prev: List<Vec> = (0 until seg).map { i ->
+            val a = (2.0 * Math.PI * i / seg).toFloat()
+            Vec(cx + r * cos(a), cy + r * sin(a), cz)
+        }
+        for (k in 1..rings) {
+            val phi = (Math.PI / 2.0 * k / rings).toFloat() // от экватора к вершине
+            val rr = r * cos(phi)
+            val zz = cz + r * sin(phi)
+            val cur: List<Vec> = if (k == rings) {
+                List(seg) { Vec(cx, cy, cz + r) }
+            } else {
+                (0 until seg).map { i ->
+                    val a = (2.0 * Math.PI * i / seg).toFloat()
+                    Vec(cx + rr * cos(a), cy + rr * sin(a), zz)
+                }
+            }
+            for (i in 0 until seg) {
+                val j = (i + 1) % seg
+                faces.add(Face(listOf(prev[i], prev[j], cur[j], cur[i]), color, alpha))
+            }
+            prev = cur
+        }
+    }
+
+    /** Реальная высота верха 3D-модели детали, мм (для подписей и выделения). */
+    private fun visualTop(c: PlacedComponent): Float = when (c.typeId) {
+        "esp32" -> 7.2f
+        "oled", "tft", "tft18", "lcd1602" -> 2.2f
+        "nrf24" -> 3.4f
+        "led" -> 8.6f
+        "resistor" -> 3.8f
+        "button" -> 4.8f
+        "bat18650" -> c.effH() * 2.54f * 0.85f
+        "pot" -> 11.4f
+        "cap", "buzzer" -> c.def().heightMm * 0.85f
+        "servo" -> c.def().heightMm * 0.62f + 5.5f
+        "relay" -> c.def().heightMm * 0.82f
+        else -> c.def().heightMm * 0.7f
+    }
+
+    /** Высота контактного штыря модели (куда садятся провода), мм. */
+    private fun pinZ(c: PlacedComponent): Float = when (c.typeId) {
+        "esp32" -> 5.2f
+        "oled", "tft", "tft18", "lcd1602", "nrf24" -> 4.6f
+        "led", "resistor", "cap" -> 1.1f
+        "button" -> 2.6f
+        "bat18650", "bat9v", "lipo" -> 4.0f
+        "servo", "relay" -> 3.4f
+        "pot" -> 3.6f
+        else -> 3.0f
+    }
+
     private fun compWorld(c: PlacedComponent): FloatArray {
         val x = c.gridX * 2.54f
         val y = c.gridY * 2.54f
@@ -166,7 +254,7 @@ class Scene3DView @JvmOverloads constructor(
         return Vec(
             (c.gridX + px) * 2.54f + 1.27f,
             (c.gridY + py) * 2.54f + 1.27f,
-            c.def().heightMm
+            pinZ(c)
         )
     }
 
@@ -208,34 +296,157 @@ class Scene3DView @JvmOverloads constructor(
             }
         }
 
-        // компоненты — объёмные коробки
+        // компоненты — детализированные модели (как настоящие детали)
         for (c in proj.components) {
             val def = c.def()
             val (x, y, w, d) = compWorld(c)
-            val h = def.heightMm
-            addBox(faces, x, y, 0f, w, d, h, def.color)
+            val pcb = 1.6f // толщина печатной платы модулей
             when (c.typeId) {
                 "esp32" -> {
-                    addBox(faces, x + w * 0.30f, y + d * 0.38f, h, w * 0.40f, d * 0.24f, 2.2f, Color.parseColor("#37474F"))
-                    addBox(faces, x + w * 0.18f, y + d * 0.04f, h, w * 0.64f, d * 0.12f, 1.2f, Color.parseColor("#90CAF9"))
+                    // синяя плата DevKit
+                    addBox(faces, x, y, 0f, w, d, pcb, Color.parseColor("#1A237E"))
+                    // гребёнки штырей по обеим сторонам (чёрный пластик + золотые штыри ниже)
+                    addBox(faces, x - 0.4f, y + 1f, pcb, 2.2f, d - 2f, 2.4f, Color.parseColor("#111111"))
+                    addBox(faces, x + w - 1.8f, y + 1f, pcb, 2.2f, d - 2f, 2.4f, Color.parseColor("#111111"))
+                    // модуль ESP32-WROOM в серебристом экране
+                    addBox(faces, x + w * 0.22f, y + d * 0.30f, pcb, w * 0.56f, d * 0.42f, 3.4f, Color.parseColor("#C0C6CE"))
+                    // антенна (светлый участок платы в торце модуля)
+                    addBox(faces, x + w * 0.22f, y + d * 0.055f, pcb, w * 0.56f, d * 0.20f, 0.8f, Color.parseColor("#3949AB"))
+                    // micro-USB разъём
+                    addBox(faces, x + w * 0.30f, y - 0.8f, pcb, w * 0.40f, 5.5f, 3.2f, Color.parseColor("#9AA0A6"))
+                    // кнопки EN и BOOT
+                    addBox(faces, x + w * 0.06f, y + 1.2f, pcb, 3.4f, 3.4f, 2.2f, Color.parseColor("#212121"))
+                    addBox(faces, x + w * 0.82f, y + 1.2f, pcb, 3.4f, 3.4f, 2.2f, Color.parseColor("#212121"))
+                    // стабилизатор и мелочёвка
+                    addBox(faces, x + w * 0.40f, y + d * 0.78f, pcb, w * 0.22f, d * 0.10f, 2.2f, Color.parseColor("#263238"))
+                    addBox(faces, x + w * 0.15f, y + d * 0.82f, pcb, 2.4f, 2.4f, 1.6f, Color.parseColor("#5D4037"))
+                    addBox(faces, x + w * 0.78f, y + d * 0.82f, pcb, 2.4f, 2.4f, 1.6f, Color.parseColor("#5D4037"))
                 }
                 "oled", "tft", "tft18", "lcd1602" -> {
-                    val insetX = w * 0.07f; val insetY = d * 0.10f
-                    val screenColor = if (c.typeId == "lcd1602") Color.parseColor("#9CCC65") else Color.parseColor("#05131A")
+                    addBox(faces, x, y, 0f, w, d, pcb, def.color)
+                    // рамка и стекло экрана
+                    val ix = w * 0.07f; val iy = d * 0.08f
                     addQuad(
-                        faces,
-                        listOf(
-                            Vec(x + insetX, y + insetY, h + 0.15f),
-                            Vec(x + w - insetX, y + insetY, h + 0.15f),
-                            Vec(x + w - insetX, y + d - insetY, h + 0.15f),
-                            Vec(x + insetX, y + d - insetY, h + 0.15f)
-                        ), screenColor
+                        faces, listOf(
+                            Vec(x + ix, y + iy, pcb + 0.12f), Vec(x + w - ix, y + iy, pcb + 0.12f),
+                            Vec(x + w - ix, y + d - iy, pcb + 0.12f), Vec(x + ix, y + d - iy, pcb + 0.12f)
+                        ), if (c.typeId == "lcd1602") Color.parseColor("#9CCC65") else Color.parseColor("#05131A")
+                    )
+                    // микросхема-драйвер сзади экрана
+                    addBox(faces, x + w * 0.38f, y + d * 0.88f, pcb, w * 0.24f, d * 0.08f, 1.4f, Color.parseColor("#111111"))
+                }
+                "nrf24" -> {
+                    addBox(faces, x, y, 0f, w, d, pcb, Color.parseColor("#0D47A1"))
+                    // чип nRF24 и кварц
+                    addBox(faces, x + w * 0.30f, y + d * 0.38f, pcb, w * 0.40f, d * 0.30f, 1.6f, Color.parseColor("#111111"))
+                    addCylinderZ(faces, x + w * 0.78f, y + d * 0.55f, pcb, 1.6f, 1.4f, Color.parseColor("#C0C6CE"))
+                    // печатная антенна «змейкой» в торце
+                    addBox(faces, x + w * 0.08f, y + d * 0.05f, pcb, w * 0.84f, d * 0.06f, 0.5f, Color.parseColor("#FFD54F"))
+                    addBox(faces, x + w * 0.08f, y + d * 0.16f, pcb, w * 0.84f, d * 0.06f, 0.5f, Color.parseColor("#FFD54F"))
+                    addBox(faces, x + w * 0.08f, y + d * 0.27f, pcb, w * 0.84f, d * 0.06f, 0.5f, Color.parseColor("#FFD54F"))
+                }
+                "led" -> {
+                    val ledColor = when (c.props["colorName"]) {
+                        "Зелёный" -> Color.GREEN; "Синий" -> Color.BLUE; "Жёлтый" -> Color.YELLOW
+                        "Белый" -> Color.WHITE; else -> Color.RED
+                    }
+                    val cxm = x + w / 2f; val cym = y + d / 2f
+                    val r = minOf(w, d) * 0.36f
+                    // ножки
+                    addBox(faces, cxm - r * 0.55f, cym - 0.35f, 0f, 0.7f, 0.7f, 3.2f, Color.parseColor("#C0C6CE"))
+                    addBox(faces, cxm + r * 0.55f - 0.7f, cym - 0.35f, 0f, 0.7f, 0.7f, 3.2f, Color.parseColor("#C0C6CE"))
+                    // цилиндрическое тело + купол (полупрозрачные)
+                    addCylinderZ(faces, cxm, cym, 2.8f, r, 2.6f, ledColor, 170)
+                    addDome(faces, cxm, cym, 5.4f, r, ledColor, 170)
+                    // юбка у основания
+                    addCylinderZ(faces, cxm, cym, 2.6f, r * 1.18f, 0.9f, ledColor, 190)
+                }
+                "resistor" -> {
+                    val cym = y + d / 2f
+                    val bodyLen = w * 0.52f
+                    val bx1 = x + (w - bodyLen) / 2f
+                    val bx2 = bx1 + bodyLen
+                    // аксиальные выводы
+                    addBox(faces, x + 0.4f, cym - 0.25f, 0.9f, bx1 - x - 0.4f, 0.5f, 0.5f, Color.parseColor("#C0C6CE"))
+                    addBox(faces, bx2, cym - 0.25f, 0.9f, x + w - bx2 - 0.4f, 0.5f, 0.5f, Color.parseColor("#C0C6CE"))
+                    // тело-цилиндр и цветные полоски кода
+                    addCylinderX(faces, bx1, bx2, cym, 2.1f, 1.55f, Color.parseColor("#D7A86E"))
+                    val stripeCols = listOf(Color.RED, Color.RED, Color.parseColor("#795548"), Color.parseColor("#FFD700"))
+                    val ohms = c.props["ohms"] ?: "220"
+                    stripeCols.forEachIndexed { i, col ->
+                        val sx = bx1 + bodyLen * (0.22f + i * 0.17f)
+                        addCylinderX(faces, sx, sx + bodyLen * 0.09f, cym, 2.1f, 1.60f, col)
+                    }
+                    if (ohms == "0") Unit // полоски декоративны
+                }
+                "button" -> {
+                    addBox(faces, x, y, 0f, w, d, 2.2f, Color.parseColor("#263238"))
+                    val pressed = AppState.pressedButtons.contains(c.id)
+                    addCylinderZ(faces, x + w / 2f, y + d / 2f, 2.2f, minOf(w, d) * 0.26f, if (pressed) 1.2f else 2.4f,
+                        if (pressed) Color.parseColor("#69F0AE") else Color.parseColor("#EF5350"))
+                }
+                "bat18650" -> {
+                    // цилиндр, лежащий вдоль X, + плюсовой контакт
+                    addCylinderX(faces, x + 0.5f, x + w - 0.5f, y + d / 2f, d * 0.42f, d * 0.40f, Color.parseColor("#2E7D32"))
+                    addCylinderX(faces, x + w - 1.6f, x + w - 0.2f, y + d / 2f, d * 0.42f, d * 0.18f, Color.parseColor("#C0C6CE"))
+                    addBox(faces, x + w * 0.2f, y + d * 0.30f, d * 0.62f, w * 0.6f, d * 0.4f, 0.5f, Color.parseColor("#A5D6A7"))
+                }
+                "bat9v" -> {
+                    addBox(faces, x, y, 0f, w, d, def.heightMm * 0.82f, Color.parseColor("#212121"))
+                    addCylinderZ(faces, x + w * 0.32f, y + d / 2f, def.heightMm * 0.82f, 1.8f, 1.8f, Color.parseColor("#C0C6CE"))
+                    addCylinderZ(faces, x + w * 0.68f, y + d / 2f, def.heightMm * 0.82f, 1.3f, 1.8f, Color.parseColor("#9AA0A6"))
+                }
+                "lipo" -> {
+                    addBox(faces, x, y, 0f, w, d, 3.6f, Color.parseColor("#F9A825"))
+                    addBox(faces, x + w * 0.1f, y + d * 0.2f, 3.6f, w * 0.8f, d * 0.6f, 0.6f, Color.parseColor("#FFECB3"))
+                }
+                "cap" -> {
+                    addCylinderZ(faces, x + w / 2f, y + d / 2f, 0f, minOf(w, d) * 0.40f, def.heightMm * 0.8f, Color.parseColor("#283593"))
+                    addCylinderZ(faces, x + w / 2f, y + d / 2f, def.heightMm * 0.8f, minOf(w, d) * 0.40f, 0.5f, Color.parseColor("#C0C6CE"))
+                }
+                "buzzer" -> {
+                    addCylinderZ(faces, x + w / 2f, y + d / 2f, 0f, minOf(w, d) * 0.42f, def.heightMm * 0.75f, Color.parseColor("#212121"))
+                    addCylinderZ(faces, x + w / 2f, y + d / 2f, def.heightMm * 0.75f, minOf(w, d) * 0.13f, 0.5f, Color.parseColor("#0F1B24"))
+                }
+                "pot" -> {
+                    addBox(faces, x, y, 0f, w, d, 4.5f, Color.parseColor("#263238"))
+                    addCylinderZ(faces, x + w / 2f, y + d / 2f, 4.5f, minOf(w, d) * 0.20f, 5.5f, Color.parseColor("#B0BEC5"))
+                    addBox(faces, x + w / 2f - 0.5f, y + d / 2f, 10.2f, 1f, minOf(w, d) * 0.34f, 1.2f, Color.parseColor("#ECEFF1"))
+                }
+                "servo" -> {
+                    addBox(faces, x, y, 0f, w, d, def.heightMm * 0.62f, Color.parseColor("#1565C0"))
+                    addCylinderZ(faces, x + w / 2f, y + d / 2f, def.heightMm * 0.62f, minOf(w, d) * 0.22f, 3.5f, Color.parseColor("#ECEFF1"))
+                    addBox(faces, x + w * 0.12f, y + d * 0.42f, def.heightMm * 0.62f + 3.8f, w * 0.76f, d * 0.16f, 1.4f, Color.parseColor("#FFFFFF"))
+                }
+                "relay" -> {
+                    addBox(faces, x, y, 0f, w, d, def.heightMm * 0.78f, Color.parseColor("#1565C0"))
+                    addQuad(
+                        faces, listOf(
+                            Vec(x + w * 0.15f, y + d * 0.2f, def.heightMm * 0.78f + 0.1f),
+                            Vec(x + w * 0.85f, y + d * 0.2f, def.heightMm * 0.78f + 0.1f),
+                            Vec(x + w * 0.85f, y + d * 0.8f, def.heightMm * 0.78f + 0.1f),
+                            Vec(x + w * 0.15f, y + d * 0.8f, def.heightMm * 0.78f + 0.1f)
+                        ), Color.parseColor("#0D47A1")
                     )
                 }
-                "servo" -> addBox(faces, x + w * 0.25f, y + d * 0.25f, h, w * 0.5f, d * 0.5f, 4f, Color.parseColor("#FFE0B2"))
-                "nrf24" -> addBox(faces, x + w * 0.55f, y + d * 0.15f, h, w * 0.35f, d * 0.7f, 1.5f, Color.parseColor("#111111"))
-                "pot" -> addBox(faces, x + w * 0.30f, y + d * 0.30f, h, w * 0.4f, d * 0.4f, 3f, Color.parseColor("#B0BEC5"))
-                "bat18650" -> addBox(faces, x + w * 0.05f, y + d * 0.20f, h, w * 0.9f, d * 0.6f, 2f, Color.parseColor("#66BB6A"))
+                "dht22" -> {
+                    addBox(faces, x, y, 0f, w, d, def.heightMm * 0.6f, Color.parseColor("#ECEFF1"))
+                    addBox(faces, x + w * 0.2f, y + d * 0.2f, def.heightMm * 0.6f, w * 0.6f, d * 0.6f, 1.2f, Color.parseColor("#90CAF9"))
+                }
+                "perfboard" -> {
+                    addBox(faces, x, y, 0f, w, d, 1.2f, Color.parseColor("#1B5E20"))
+                }
+                else -> {
+                    addBox(faces, x, y, 0f, w, d, def.heightMm * 0.7f, def.color)
+                }
+            }
+
+            // штыревые выводы модулей: золотые штыри на гребёнках
+            if (c.typeId in listOf("esp32", "oled", "tft", "tft18", "lcd1602", "nrf24", "dht22", "relay", "servo")) {
+                for (pin in def.pins) {
+                    val pw = pinWorld(c, pin)
+                    addCylinderZ(faces, pw.x, pw.y, 1.2f, 0.55f, (pinZ(c) - 1.2f).coerceAtLeast(0.6f), Color.parseColor("#FFD54F"), 255, 8)
+                }
             }
         }
 
@@ -275,6 +486,19 @@ class Scene3DView @JvmOverloads constructor(
                 paint.color = Color.parseColor("#0B3D20")
                 canvas.drawCircle(p.x, p.y, (0.75f * p.scale).coerceIn(1f, 5f), paint)
             }
+        }
+
+        // шелкография на плате
+        run {
+            val tp = project(Vec(3f, boardD() - 3f, 0.15f), cam)
+            paint.style = Paint.Style.FILL
+            paint.color = Color.argb(200, 255, 255, 255)
+            paint.textSize = 8f * density
+            paint.textAlign = Paint.Align.LEFT
+            canvas.drawText("CONNECT PCB • 2.54 мм • REV 1.3", tp.x, tp.y, paint)
+            val tp2 = project(Vec(boardW() - 4f, 3f, 0.15f), cam)
+            paint.textAlign = Paint.Align.RIGHT
+            canvas.drawText("3D SIM", tp2.x, tp2.y, paint)
         }
 
         // провода (дуги в 3D) и пайка (дорожки по плате)
@@ -321,7 +545,7 @@ class Scene3DView @JvmOverloads constructor(
         // выделение выбранного
         AppState.selected()?.let { c ->
             val (x, y, w, d) = compWorld(c)
-            val h = c.def().heightMm + 0.4f
+            val h = visualTop(c) + 0.4f
             val corners = listOf(Vec(x, y, h), Vec(x + w, y, h), Vec(x + w, y + d, h), Vec(x, y + d, h))
             val path = Path()
             corners.map { project(it, cam) }.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
@@ -340,9 +564,24 @@ class Scene3DView @JvmOverloads constructor(
             for (pin in c.def().pins) {
                 val p = project(pinWorld(c, pin), cam)
                 val isPending = pendingPin?.let { it.first.id == c.id && it.second.name == pin.name } == true
+                // живые выходы ESP: HIGH — зелёный, LOW-выход — тёмный, остальное — золотой штырь
+                val espKey = "${c.id}:${pin.name}"
+                val isEspOut = c.typeId == "esp32" && AppState.pinModes[espKey] == "OUTPUT"
+                val espHigh = isEspOut && AppState.pinOutputs[espKey] == 1 && AppState.running
                 paint.style = Paint.Style.FILL
-                paint.color = if (isPending) Color.YELLOW else Color.parseColor("#FFD54F")
-                canvas.drawCircle(p.x, p.y, (0.85f * p.scale).coerceIn(2.8f, 9f), paint)
+                paint.color = when {
+                    isPending -> Color.YELLOW
+                    espHigh -> Color.parseColor("#22C55E")
+                    isEspOut -> Color.parseColor("#475569")
+                    else -> Color.parseColor("#FFD54F")
+                }
+                val pinR = (0.85f * p.scale).coerceIn(2.8f, 9f)
+                if (espHigh) {
+                    paint.alpha = 110
+                    canvas.drawCircle(p.x, p.y, pinR * 2.1f, paint)
+                    paint.alpha = 255
+                }
+                canvas.drawCircle(p.x, p.y, pinR, paint)
                 paint.color = Color.parseColor("#4E342E")
                 canvas.drawCircle(p.x, p.y, (0.32f * p.scale).coerceIn(1f, 3.5f), paint)
                 if (showNames || selected) {
@@ -358,7 +597,7 @@ class Scene3DView @JvmOverloads constructor(
         paint.textAlign = Paint.Align.CENTER
         for (c in proj.components) {
             val (x, y, w, d) = compWorld(c)
-            val h = c.def().heightMm
+            val h = visualTop(c)
             val center = project(Vec(x + w / 2f, y + d / 2f, h + 0.3f), cam)
             when (c.typeId) {
                 "led" -> {
