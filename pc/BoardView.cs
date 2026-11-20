@@ -1058,7 +1058,7 @@ public sealed class BoardView : FrameworkElement
             }
             else
             {
-                LogMessage?.Invoke($"✒ Провод готов [{WireSide}]: {fw.Points.Count} звеньев, длина звена {LinkLengthCells:F1} кл.");
+                LogMessage?.Invoke($"✒ Провод готов [{WireSide}]: {fw.Points.Count} звеньев, толщина ×{fw.Thickness:F1}");
             }
             StateChanged?.Invoke();
         }
