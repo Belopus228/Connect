@@ -1,57 +1,40 @@
-name: Build PC (Windows EXE)
+name: Build PC (native .NET)
 
 on:
   push:
-    branches:
-      - "arena/**"
-      - main
-    paths:
-      - "pc/**"
-      - ".github/workflows/build-pc.yml"
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build-pc:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          fetch-depth: 0
 
-      - name: Install PyInstaller
-        run: python -m pip install --upgrade pyinstaller
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-      - name: Build EXE
-        working-directory: pc
+      - name: Publish native Windows app
+        shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name Connect-PC ConnectPC.py 2>&1 | Tee-Object -FilePath ..\pc-build-log.txt
-          if (-not (Test-Path dist\Connect-PC.exe)) { throw "Connect-PC.exe was not produced" }
-          Get-Item dist\Connect-PC.exe | Format-List Name,Length
+          New-Item -ItemType Directory -Force -Path pc-out | Out-Null
+          dotnet publish pc/ConnectPC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o pc-out 2>&1 | Tee-Object pc-build-log.txt
 
-      - name: Commit EXE back to branch
-        if: always()
-        shell: bash
+      - name: Commit EXE
+        shell: pwsh
         run: |
-          mkdir -p ci-output/pc
-          cp pc-build-log.txt ci-output/pc/pc-build-log.txt || echo "no log" > ci-output/pc/pc-build-log.txt
-          if [ -f pc/dist/Connect-PC.exe ]; then
-            cp pc/dist/Connect-PC.exe ci-output/pc/Connect-PC.exe
-            ls -lh ci-output/pc/
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f ci-output/pc/pc-build-log.txt ci-output/pc/Connect-PC.exe || git add -f ci-output/pc/pc-build-log.txt
-          if git diff --cached --quiet; then
-            echo "Nothing to commit"
-          else
-            git commit -m "CI: PC build results (EXE + log) [skip ci]"
-            git pull --rebase origin "${{ github.ref_name }}" || true
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          New-Item -ItemType Directory -Force -Path ci-output/pc | Out-Null
+          Copy-Item pc-out/ConnectPC.exe ci-output/pc/Connect-PC.exe
+          if (Test-Path pc-build-log.txt) { Copy-Item pc-build-log.txt ci-output/pc/pc-build-log.txt }
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add ci-output/pc/Connect-PC.exe ci-output/pc/pc-build-log.txt
+          git commit -m "PC native build [skip ci]" 2>$null
+          git pull --rebase origin ${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref_name }}
