@@ -1,7 +1,7 @@
   Determining projects to restore...
-  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 7.63 sec).
+  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 9.45 sec).
 D:\a\Connect\Connect\pc\BoardView.cs(146,22): warning CS0219: The variable 'SQ' is assigned but its value is never used [D:\a\Connect\Connect\pc\ConnectPC.csproj]
   ConnectPC -> D:\a\Connect\Connect\pc\bin\Release\net8.0-windows\win-x64\ConnectPC.dll
   ConnectPC -> D:\a\Connect\Connect\pc-out\
 PUBLISH_EXIT=0
-EXE_SIZE_BYTES=71689889
+EXE_SIZE_BYTES=71689887
