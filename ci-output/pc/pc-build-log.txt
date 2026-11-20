@@ -1,6 +1,5 @@
   Determining projects to restore...
-  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 9.19 sec).
-  ConnectPC -> D:\a\Connect\Connect\pc\bin\Release\net8.0-windows\win-x64\ConnectPC.dll
-  ConnectPC -> D:\a\Connect\Connect\pc-out\
-PUBLISH_EXIT=0
-EXE_SIZE_BYTES=71666888
+  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 7 sec).
+D:\a\Connect\Connect\pc\BoardView.cs(1153,29): error CS0115: 'BoardView.OnMouseMiddleButtonDown(MouseButtonEventArgs)': no suitable method found to override [D:\a\Connect\Connect\pc\ConnectPC.csproj]
+D:\a\Connect\Connect\pc\BoardView.cs(1162,29): error CS0115: 'BoardView.OnMouseMiddleButtonUp(MouseButtonEventArgs)': no suitable method found to override [D:\a\Connect\Connect\pc\ConnectPC.csproj]
+PUBLISH_EXIT=1
