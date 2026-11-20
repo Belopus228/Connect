@@ -445,7 +445,7 @@ public sealed class BoardView : FrameworkElement
         }
     }
 
-    private (double, double, double) LocalToWorld(PlacedComponent c, double lx, double ly, double lz = 0) =>
+    private (double X, double Y, double Z) LocalToWorld(PlacedComponent c, double lx, double ly, double lz = 0) =>
         c.Transform(lx, ly, lz);
 
     private void DrawSpaceGrid(DrawingContext dc)

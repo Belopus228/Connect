@@ -142,7 +142,7 @@ public sealed class PlacedComponent
         return (t.X, t.Y);
     }
     /// <summary>Мировые координаты контакта в 3D (с высотой).</summary>
-    public (double, double, double) PinPos3(PinDef p) => Transform(p.Dx + 0.5, p.Dy + 0.5, 0);
+    public (double X, double Y, double Z) PinPos3(PinDef p) => Transform(p.Dx + 0.5, p.Dy + 0.5, 0);
     public string Prop(string k, string def = "") => Props.TryGetValue(k, out var v) ? v : def;
 }
 
