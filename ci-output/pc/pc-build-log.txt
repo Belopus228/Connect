@@ -1,6 +1,4 @@
   Determining projects to restore...
-  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 10.34 sec).
-  ConnectPC -> D:\a\Connect\Connect\pc\bin\Release\net8.0-windows\win-x64\ConnectPC.dll
-  ConnectPC -> D:\a\Connect\Connect\pc-out\
-PUBLISH_EXIT=0
-EXE_SIZE_BYTES=71675349
+  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 8.78 sec).
+D:\a\Connect\Connect\pc\BoardView.cs(1061,107): error CS0103: The name 'LinkLengthCells' does not exist in the current context [D:\a\Connect\Connect\pc\ConnectPC.csproj]
+PUBLISH_EXIT=1
