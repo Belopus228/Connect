@@ -25,12 +25,15 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path pc-out | Out-Null
           dotnet publish pc/ConnectPC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o pc-out 2>&1 | Tee-Object pc-build-log.txt
+          "PUBLISH_EXIT=$LASTEXITCODE" | Add-Content pc-build-log.txt
+          if (-not (Test-Path pc-out/ConnectPC.exe)) { Copy-Item pc-build-log.txt ci-output-pc-build-log.txt -ErrorAction SilentlyContinue }
 
       - name: Commit EXE
+        if: always()
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path ci-output/pc | Out-Null
-          Copy-Item pc-out/ConnectPC.exe ci-output/pc/Connect-PC.exe
+          if (Test-Path pc-out/ConnectPC.exe) { Copy-Item pc-out/ConnectPC.exe ci-output/pc/Connect-PC.exe }
           if (Test-Path pc-build-log.txt) { Copy-Item pc-build-log.txt ci-output/pc/pc-build-log.txt }
           git config user.name "github-actions"
           git config user.email "actions@github.com"
