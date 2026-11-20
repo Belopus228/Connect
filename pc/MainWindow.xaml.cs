@@ -35,9 +35,9 @@ public partial class MainWindow : Window
             _board.InvalidateVisual();
             if (EspPinsList != null) RefreshEspPins();
         };
-        ShowPanel("tools");
-        Log("✅ Connect v2.1 — нативная Windows-сборка открыта");
-        Log("✒ Провода и пайка теперь ведутся свободно мышью — без пинов и привязки.");
+        ShowPanel("tutorial");
+        Log("✅ Connect v2.2 — нативная Windows-сборка открыта");
+        Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
     }
@@ -51,6 +51,7 @@ public partial class MainWindow : Window
         {
             "add" => "＋ ДОБАВЛЕНИЕ ДЕТАЛЕЙ",
             "tools" => "🛠 ИНСТРУМЕНТЫ",
+            "tutorial" => "🎓 ТУТОРИАЛ",
             "esp" => "◼ ПАНЕЛЬ ESP32",
             "code" => "⌨ ПРОШИВКА",
             "project" => "💾 ПРОЕКТ",
@@ -62,6 +63,7 @@ public partial class MainWindow : Window
         {
             case "add": BuildAddPanel(); break;
             case "tools": BuildToolsPanel(); break;
+            case "tutorial": BuildTutorialPanel(); break;
             case "esp": BuildEspPanel(); break;
             case "code": BuildCodePanel(); break;
             case "project": BuildProjectPanel(); break;
@@ -69,6 +71,7 @@ public partial class MainWindow : Window
         if (_runner != null && EspPinsList != null) RefreshEspPins();
     }
 
+    private void TutorialBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("tutorial");
     private void AddBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("add");
     private void ToolsBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("tools");
     private void EspPanelBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("esp");
@@ -146,8 +149,8 @@ public partial class MainWindow : Window
         var modes = new[]
         {
             ("Camera", "📷 Камера: поворот/наклон"), ("MoveBoard", "✋ Плату: перемещение"),
-            ("Move", "↔ Деталь: двигать"), ("Wire", "✒ Провод (вести мышью)"),
-            ("Solder", "✒ Пайка (вести мышью)"), ("Sim", "🖱 Симуляция (клик)"),
+            ("Move", "↔ Деталь: двигать"), ("Wire", "✒ Провод (звенья: ЛКМ/колесо/ПКМ)"),
+            ("Solder", "✒ Пайка (звенья: ЛКМ/колесо/ПКМ)"), ("Sim", "🖱 Симуляция (клик)"),
             ("Measure", "📏 Замер"), ("Delete", "🗑 Удалить")
         };
         RadioButton current = null;
@@ -311,6 +314,76 @@ public partial class MainWindow : Window
         "hot" => "  •  перегрев 🔥",
         _ => "  •  хорошая пайка ✨"
     };
+
+    // -------------------- TUTORIAL --------------------
+    private int _tutorialIndex;
+
+    private static readonly (string Title, string Body, string Mode)[] TutorialSteps =
+    {
+        ("Добро пожаловать в Connect!",
+         "Это 3D-симулятор электроники. Слева — плата, сверху — главные действия, справа — панель с инструментами.\n\nВсё кликабельное теперь с обводкой: наведите курсор — кнопка подсветится. Этот туториал можно в любой момент открыть кнопкой «🎓 Туториал» сверху.", "Camera"),
+        ("Камера: вращение следует за рукой",
+         "Зажмите ЛЕВУЮ кнопку мыши и ведите — модель поворачивается ЗА курсором, как будто вы держите плату рукой.\n\nТо же самое — зажатым КОЛЁСИКОМ мыши (средней кнопкой) в любом режиме. Колесо без зажатия — масштаб. Режим «✋ Плату» двигает плату, не вращая.", "Camera"),
+        ("Добавление деталей",
+         "Кнопка «＋ Добавить» сверху. Деталь можно ПЕРЕТАЩИТЬ мышкой прямо на плату или кликнуть — она встанет в свободное место.\n\nЗатем режим «↔ Деталь» — перетаскивание деталей по плате.", "Move"),
+        ("Провода по звеньям",
+         "Режим «✒ Провод» в Инструментах. Управляйте как в CAD:\n\n• ЛКМ — поставить очередное звено;\n• КОЛЕСО мыши — длина (дальность) следующего звена, видна жёлтая подпись у курсора;\n• ПКМ — завершить провод.\n\nНикакой привязки к пинам: линия идёт ровно по вашим звеньям.", "Wire"),
+        ("Пайка и температура",
+         "Режим «✒ Пайка» ставится так же звеньями. Перед работой выставьте температуру жала (200–480°C) и флюс в Инструментах:\n\n• 320–380°C + флюс — блестящая пайка;\n• <280°C — холодная (трещины);\n• >430°C — перегрев и поджог платы.\n\nСторона платы для новых линий: Top/Bottom там же.", "Solder"),
+        ("Корпус, стороны и замер",
+         "В Инструментах: «Смотреть НИЗ» переворачивает плату, список Top/Bottom выбирает сторону новых линий, а «Корпус платы» добавляет акриловый/чёрный/металлический корпус с крышкой и винтами.\n\nРежим «📏 Замер»: два клика по отверстиям — расстояние в мм.", "Measure"),
+        ("Прошивка и запуск",
+         "Кнопка «⌨ Прошивка»: выберите пример или напишите свой код, затем «▶ Запуск». Панель ESP сверху показывает живые выводы HIGH/LOW.\n\nВ режиме «🖱 Симуляция» кликайте по кнопке и потенциометру прямо на плате. Проект сохраняется кнопкой «💾 Проект».", "Sim"),
+    };
+
+    private void BuildTutorialPanel()
+    {
+        _tutorialIndex = Math.Clamp(_tutorialIndex, 0, TutorialSteps.Length - 1);
+        var step = TutorialSteps[_tutorialIndex];
+        SideContent.Children.Add(SectionTitle($"ШАГ {_tutorialIndex + 1} ИЗ {TutorialSteps.Length}"));
+        SideContent.Children.Add(new TextBlock
+        {
+            Text = step.Title,
+            FontSize = 15,
+            FontWeight = FontWeights.Bold,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 2, 0, 6)
+        });
+        SideContent.Children.Add(new TextBlock
+        {
+            Text = step.Body,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
+            Margin = new Thickness(0, 0, 0, 10)
+        });
+        var nav = new StackPanel { Orientation = Orientation.Horizontal };
+        var prev = new Button { Content = "← Назад", IsEnabled = _tutorialIndex > 0 };
+        prev.Click += (_, _) => { _tutorialIndex--; BuildTutorialRefresh(); };
+        var next = new Button { Content = _tutorialIndex == TutorialSteps.Length - 1 ? "✓ К работе" : "Далее →" };
+        next.Click += (_, _) =>
+        {
+            if (_tutorialIndex == TutorialSteps.Length - 1) { ShowPanel("tools"); return; }
+            _tutorialIndex++;
+            BuildTutorialRefresh();
+        };
+        nav.Children.Add(prev);
+        nav.Children.Add(next);
+        SideContent.Children.Add(nav);
+        SideContent.Children.Add(new TextBlock
+        {
+            Text = "Режим платы уже переключён под этот шаг — пробуйте прямо на плате.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
+            Margin = new Thickness(0, 8, 0, 0)
+        });
+        if (step.Mode != null) SetMode(step.Mode);
+    }
+
+    private void BuildTutorialRefresh()
+    {
+        SideContent.Children.Clear();
+        BuildTutorialPanel();
+    }
 
     // -------------------- ESP --------------------
     private void BuildEspPanel()
@@ -527,13 +600,21 @@ public partial class MainWindow : Window
         SideContent.Children.Add(loopInfo);
     }
 
-    private static TextBlock SectionTitle(string text) => new()
+    private static Border SectionTitle(string text) => new()
     {
-        Text = text,
-        FontWeight = FontWeights.Bold,
-        FontSize = 12,
+        Background = new SolidColorBrush(Color.FromRgb(22, 40, 58)),
+        BorderBrush = new SolidColorBrush(Color.FromRgb(47, 77, 109)),
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(5),
+        Padding = new Thickness(8, 5, 8, 5),
         Margin = new Thickness(0, 12, 0, 6),
-        Foreground = new SolidColorBrush(Color.FromRgb(147, 197, 253))
+        Child = new TextBlock
+        {
+            Text = text,
+            FontWeight = FontWeights.Bold,
+            FontSize = 12,
+            Foreground = new SolidColorBrush(Color.FromRgb(147, 197, 253))
+        }
     };
 
     private void SetMode(string mode)
@@ -567,8 +648,8 @@ public partial class MainWindow : Window
             "Camera" => "Камера: тащите левой кнопкой • колесо — масштаб",
             "MoveBoard" => "Перемещение платы: тащите левой кнопкой",
             "Move" => "Перемещение детали: перетащите её мышкой",
-            "Wire" => "Провод: зажмите ЛКМ и ведите линию по плате. Без пинов и привязки",
-            "Solder" => "Пайка: ведите линию мышью — наплывы встанут по пути, качество от температуры",
+            "Wire" => $"Провод звеньями: ЛКМ — звено • колесо — длина звена ({_board.LinkLengthCells:F1} кл.) • ПКМ — завершить",
+            "Solder" => $"Пайка звеньями: ЛКМ — звено • колесо — длина ({_board.LinkLengthCells:F1} кл.) • ПКМ — готово. Качество от температуры",
             "Sim" => "Симуляция: клик по кнопке/потенциометру на плате",
             "Measure" => "Замер: клик точка → клик точка (по отверстиям 2.54 мм)",
             "Delete" => "Удаление: клик по детали",
