@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _board.Data = ProjectData.CreateDemo();
+        _board.AllowDrop = true;
         _board.LogMessage += Log;
         _board.StateChanged += RefreshState;
         DataContext = this;
@@ -88,7 +89,6 @@ public partial class MainWindow : Window
     private void MusicBtn_Click(object sender, RoutedEventArgs e)
     {
         _music.Toggle();
-        _music.IsPlaying.ToString(); // noop
         MusicBtn.Content = _music.IsPlaying ? "🎵 вкл" : "🎵 выкл";
     }
 
@@ -114,13 +114,13 @@ public partial class MainWindow : Window
         {
             var b = new Button
             {
-                Content = $"{d.Title}   •   {(d.SubTitle.Length > 24 ? d.SubTitle[..24] + "…" : d.SubTitle)}",
+                Content = $"{d.Title}   •   {d.Short}",
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Tag = d.Id
             };
             b.Click += (_, _) =>
             {
-                var c = _board.Data.AddNext((string)b.Tag);
+                var c = _board.Data.AddFree((string)b.Tag);
                 if (c != null)
                 {
                     _board.Selected = c;
@@ -328,14 +328,11 @@ public partial class MainWindow : Window
     {
         SideContent.Children.Add(SectionTitle("ПРОШИВКА"));
         var exampleBox = new ComboBox();
-        exampleBox.Items.Add("Мигание LED (GPIO2)");
-        exampleBox.Items.Add("Кнопка → LED (4 → 2)");
-        exampleBox.Items.Add("Аналог: потенциометр → Serial");
-        exampleBox.Items.Add("OLED + nRF24");
+        foreach (var ex in FirmwareExamples.All) exampleBox.Items.Add(ex.Name);
         exampleBox.SelectedIndex = 0;
         var code = new TextBox
         {
-            Text = FirmwareExamples.All["Мигание LED (GPIO2)"],
+            Text = _board.Data.Code,
             AcceptsReturn = true,
             AcceptsTab = true,
             FontFamily = new FontFamily("Consolas"),
@@ -349,8 +346,8 @@ public partial class MainWindow : Window
         };
         exampleBox.SelectionChanged += (_, _) =>
         {
-            if (exampleBox.SelectedItem is string k && FirmwareExamples.All.TryGetValue(k, out var src))
-                code.Text = src;
+            if (exampleBox.SelectedIndex >= 0 && exampleBox.SelectedIndex < FirmwareExamples.All.Count)
+                code.Text = FirmwareExamples.All[exampleBox.SelectedIndex].Code;
         };
         SideContent.Children.Add(exampleBox);
         SideContent.Children.Add(code);
@@ -416,6 +413,7 @@ public partial class MainWindow : Window
 
     private void StartSim(string codeText)
     {
+        _board.Data.Code = codeText;
         foreach (var w in _board.Data.Wires.Where(w => w.Quality != "good"))
         {
             var a = _board.Data.ById(w.AId);
