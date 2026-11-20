@@ -224,7 +224,7 @@ class CircuitView @JvmOverloads constructor(
             }
             "resistor" -> {
                 paint.color = Color.parseColor("#8D6E63")
-                val stripes = listOf(Color.RED, Color.RED, Color.BROWN, Color.parseColor("#FFD700"))
+                val stripes = listOf(Color.RED, Color.RED, Color.parseColor("#795548"), Color.parseColor("#FFD700"))
                 stripes.forEachIndexed { i, col ->
                     paint.color = col
                     val x = r.left + r.width() * (0.3f + i * 0.13f)
