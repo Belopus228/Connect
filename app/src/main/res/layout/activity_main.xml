@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1220"
+    android:orientation="vertical">
+
+    <!-- Верхняя панель -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="#111C2E"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="12dp"
+        android:paddingRight="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚡ CONNECT 3D"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/headerStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="14dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="3D-симулятор электроники"
+            android:textColor="#93C5FD"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/topSave"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="💾"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/topRun"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="6dp"
+            android:background="#14532D"
+            android:text="▶ ЗАПУСК"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Левая навигационная рейка -->
+        <LinearLayout
+            android:layout_width="76dp"
+            android:layout_height="match_parent"
+            android:background="#0F1B2D"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <Button
+                android:id="@+id/navBoard"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:text="🧊&#10;ПЛАТА"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/navCase"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="6dp"
+                android:layout_weight="1"
+                android:text="📦&#10;КОРПУС"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/navCode"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="6dp"
+                android:layout_weight="1"
+                android:text="💻&#10;КОД ESP"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/navSim"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="6dp"
+                android:layout_weight="1"
+                android:text="▶&#10;СИМУЛ."
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
+</LinearLayout>
