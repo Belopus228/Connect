@@ -579,19 +579,15 @@ public sealed class BoardView : FrameworkElement
                 m.CylZ(1.5, 0.5, zt, zt + 0.5, 0.4, "#c0c6ce", 12);
                 m.CylZ(3.5, 0.5, zt, zt + 0.5, 0.4, "#616161", 12);
                 break;
-            case "batAA1000":
-            case "batAA1800":
-            {
-                string cellCol = c.Type == "batAA1000" ? "#1565c0" : "#ef6c00";
-                m.CylX(0.30, w - 0.30, h / 2.0, 1.30, 1.05, cellCol, 22);
-                m.CylX(w * 0.40, w * 0.60, h / 2.0, 1.30, 1.08, "#eceff1", 22);
-                m.CylX(w - 0.55, w - 0.30, h / 2.0, 1.30, 1.02, "#9aa0a6", 22);
-                m.CylX(w - 0.30, w + 0.02, h / 2.0, 1.30, 0.38, "#e8eaed", 12);
-                break;
-            }
             case "lipo":
-                m.Box(0, 0, 0.2, w, h, zt * 0.7, "#f9a825");
-                m.Box(w * 0.08, h * 0.1, zt * 0.7, w * 0.92, h * 0.9, zt * 0.85, "#f57f17");
+            case "lipo1000":
+            case "lipo1800":
+                // серебристый пакет-пауч: этикетка, плата защиты, красный/чёрный выводы
+                m.BevelBox(0, 0, 0.15, w, h, zt * 0.72, 0.18, "#cfd8dc");
+                m.Box(w * 0.10, h * 0.12, zt * 0.72, w * 0.90, h * 0.88, zt * 0.86, c.Type == "lipo1800" ? "#fb8c00" : "#f9a825");
+                m.Box(w - 1.1, h * 0.2, zt * 0.72, w - 0.1, h * 0.8, zt * 0.95, "#37474f");
+                m.Box(w - 0.1, h * 0.28, 0.35, w + 0.7, h * 0.42, 0.55, "#d32f2f");
+                m.Box(w - 0.1, h * 0.58, 0.35, w + 0.7, h * 0.72, 0.55, "#212121");
                 break;
             case "buzzer":
                 m.CylZ(w / 2.0, h / 2.0, 0.2, zt * 0.85, 1.35, "#263238", 20);
@@ -661,12 +657,12 @@ public sealed class BoardView : FrameworkElement
             Text(dc, "+", ProjectLocal(c, w - 0.45, h / 2.0, 3.30), 10, "#ffffff", bold: true);
             Text(dc, "18650", ProjectLocal(c, w / 2.0, h / 2.0, 3.25), 6, "#e8f5e9", bold: true);
         }
-        foreach (var c in Data.Components.Where(c => c.Type is "batAA1000" or "batAA1800"))
+        foreach (var c in Data.Components.Where(c => c.Type is "lipo1000" or "lipo1800"))
         {
             var (w, h) = (c.Def.W, c.Def.H);
-            Text(dc, c.Type == "batAA1000" ? "AA 1000 mAh" : "AA 1800 mAh",
-                ProjectLocal(c, w / 2.0, h / 2.0, 2.55), 6, "#ffffff", bold: true);
-            Text(dc, "+", ProjectLocal(c, w - 0.35, h / 2.0, 2.45), 9, "#ffffff", bold: true);
+            double zt2 = c.Def.HeightMm / 2.54;
+            Text(dc, c.Type == "lipo1000" ? "Li-Po 1000 mAh" : "Li-Po 1800 mAh",
+                ProjectLocal(c, w / 2.0, h / 2.0, zt2 * 0.95), 6, "#37474f", bold: true);
         }
         foreach (var c in Data.Components.Where(c => c.Type == "led"))
         {

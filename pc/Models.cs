@@ -69,10 +69,10 @@ public static class Catalog
             new[] { ("+",1,0),("-",3,0) }, new() { ["voltage"] = "9" });
         Add("lipo", "Li-Po 3.7В", "LiPo", 8, 5, 6, "#f9a825",
             new[] { ("+",7,2),("-",0,2) }, new() { ["voltage"] = "3.7" });
-        Add("batAA1000", "Батарейка AA 1000 мАч", "AA·1000", 8, 3, 14, "#1565c0",
-            new[] { ("+",7,1),("-",0,1) }, new() { ["voltage"] = "1.2", ["mah"] = "1000" });
-        Add("batAA1800", "Батарейка AA 1800 мАч", "AA·1800", 8, 3, 14, "#ef6c00",
-            new[] { ("+",7,1),("-",0,1) }, new() { ["voltage"] = "1.2", ["mah"] = "1800" });
+        Add("lipo1000", "Li-Po 1000 мАч 3.7В", "LiPo·1000", 8, 5, 6, "#f9a825",
+            new[] { ("+",7,2),("-",0,2) }, new() { ["voltage"] = "3.7", ["mah"] = "1000" });
+        Add("lipo1800", "Li-Po 1800 мАч 3.7В", "LiPo·1800", 10, 6, 7, "#fb8c00",
+            new[] { ("+",9,2),("-",0,2) }, new() { ["voltage"] = "3.7", ["mah"] = "1800" });
         Add("buzzer", "Пьезо-зуммер", "BUZ", 4, 4, 9, "#455a64", new[] { ("+",0,3),("-",3,3) });
         Add("dht22", "Датчик DHT22", "DHT22", 7, 5, 12, "#0277bd",
             new[] { ("VCC",0,2),("DATA",2,2),("GND",6,2) }, new() { ["temp"] = "24.5", ["hum"] = "48" });
@@ -401,7 +401,7 @@ public static class Circuit
         var uf = BuildUF(p);
         var sources = new Dictionary<string, double>();
         var grounds = new HashSet<string>();
-        foreach (var c in p.Components.Where(c => c.Type is "bat18650" or "bat9v" or "lipo" or "batAA1000" or "batAA1800"))
+        foreach (var c in p.Components.Where(c => c.Type is "bat18650" or "bat9v" or "lipo" or "lipo1000" or "lipo1800"))
         {
             double v = double.TryParse(c.Prop("voltage", "3.7"), System.Globalization.NumberStyles.Any,
                 System.Globalization.CultureInfo.InvariantCulture, out var vv) ? vv : 3.7;
@@ -491,7 +491,7 @@ public static class Circuit
         string root = uf.Find(espId + "|" + pinName);
         foreach (var c in p.Components)
         {
-            if (c.Type is "bat18650" or "bat9v" or "lipo" or "batAA1000" or "batAA1800")
+            if (c.Type is "bat18650" or "bat9v" or "lipo" or "lipo1000" or "lipo1800")
             {
                 if (uf.Find(Node(c, "-")) == root) return 0;
                 if (uf.Find(Node(c, "+")) == root) return 1;
