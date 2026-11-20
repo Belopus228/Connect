@@ -36,8 +36,8 @@ class Scene3DView @JvmOverloads constructor(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val density = resources.displayMetrics.density
 
-    var azimuth = 0.95f
-    var elevation = 0.92f
+    var camAzimuth = 0.95f
+    var camElevation = 0.92f
     var zoom = 1.0f
 
     private var lastX = 0f
@@ -70,7 +70,7 @@ class Scene3DView @JvmOverloads constructor(
     private fun camera(): Cam {
         val target = Vec(boardW() / 2f, boardD() / 2f, 0f)
         val dist = maxOf(boardW(), boardD()) * 2.1f + 60f
-        val dir = Vec(cos(elevation) * cos(azimuth), cos(elevation) * sin(azimuth), sin(elevation))
+        val dir = Vec(cos(camElevation) * cos(camAzimuth), cos(camElevation) * sin(camAzimuth), sin(camElevation))
         val eye = target + dir * dist
         val fwd = norm(target - eye)
         val right = norm(cross(Vec(0f, 0f, 1f), fwd))
@@ -90,10 +90,10 @@ class Scene3DView @JvmOverloads constructor(
 
     fun setView(name: String) {
         when (name) {
-            "top" -> { elevation = 1.38f; azimuth = 0.95f }
-            "front" -> { elevation = 0.28f; azimuth = 1.57f }
-            "side" -> { elevation = 0.32f; azimuth = 0.05f }
-            else -> { elevation = 0.92f; azimuth = 0.95f }
+            "top" -> { camElevation = 1.38f; camAzimuth = 0.95f }
+            "front" -> { camElevation = 0.28f; camAzimuth = 1.57f }
+            "side" -> { camElevation = 0.32f; camAzimuth = 0.05f }
+            else -> { camElevation = 0.92f; camAzimuth = 0.95f }
         }
         invalidate()
     }
@@ -527,8 +527,8 @@ class Scene3DView @JvmOverloads constructor(
                     return true
                 }
                 if (AppState.mode == "camera") {
-                    azimuth -= (event.x - lastX) * 0.008f
-                    elevation = (elevation + (event.y - lastY) * 0.006f).coerceIn(0.12f, 1.42f)
+                    camAzimuth -= (event.x - lastX) * 0.008f
+                    camElevation = (camElevation + (event.y - lastY) * 0.006f).coerceIn(0.12f, 1.42f)
                     lastX = event.x; lastY = event.y
                     invalidate(); return true
                 }
