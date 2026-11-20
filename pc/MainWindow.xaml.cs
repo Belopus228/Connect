@@ -36,7 +36,8 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tools");
-        Log("✅ Connect v2.0 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.1 — нативная Windows-сборка открыта");
+        Log("✒ Провода и пайка теперь ведутся свободно мышью — без пинов и привязки.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
     }
@@ -145,8 +146,8 @@ public partial class MainWindow : Window
         var modes = new[]
         {
             ("Camera", "📷 Камера: поворот/наклон"), ("MoveBoard", "✋ Плату: перемещение"),
-            ("Move", "↔ Деталь: двигать"), ("Wire", "〰 Провод"),
-            ("Solder", "▤ Дорожка/пайка"), ("Sim", "🖱 Симуляция (клик)"),
+            ("Move", "↔ Деталь: двигать"), ("Wire", "✒ Провод (вести мышью)"),
+            ("Solder", "✒ Пайка (вести мышью)"), ("Sim", "🖱 Симуляция (клик)"),
             ("Measure", "📏 Замер"), ("Delete", "🗑 Удалить")
         };
         RadioButton current = null;
@@ -209,6 +210,39 @@ public partial class MainWindow : Window
             TextWrapping = TextWrapping.Wrap
         });
 
+        SideContent.Children.Add(SectionTitle("КОРПУС ПЛАТЫ"));
+        var caseBox = new ComboBox { Width = 190, HorizontalAlignment = HorizontalAlignment.Left };
+        caseBox.Items.Add("Без корпуса");
+        caseBox.Items.Add("Прозрачный акрил");
+        caseBox.Items.Add("Чёрный ABS");
+        caseBox.Items.Add("Синий металл");
+        caseBox.SelectedIndex = _board.Data.CaseType switch
+        {
+            "Acrylic" => 1,
+            "Black" => 2,
+            "BlueMetal" => 3,
+            _ => 0
+        };
+        caseBox.SelectionChanged += (_, _) =>
+        {
+            _board.Data.CaseType = caseBox.SelectedIndex switch
+            {
+                1 => "Acrylic",
+                2 => "Black",
+                3 => "BlueMetal",
+                _ => "None"
+            };
+            RefreshState();
+            Log(_board.Data.CaseType == "None" ? "Корпус убран" : $"🧰 Корпус добавлен: {caseBox.SelectedItem}");
+        };
+        SideContent.Children.Add(caseBox);
+        SideContent.Children.Add(new TextBlock
+        {
+            Text = "Корпус ставится вокруг платы: стенки, винты,\nу акрила — прозрачная крышка. Сохраняется в проекте.",
+            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
+            TextWrapping = TextWrapping.Wrap
+        });
+
         SideContent.Children.Add(SectionTitle("ПАЯЛЬНИК И ПРИПОЙ"));
         var tempLabel = new TextBlock { Text = $"Жало: {_board.SolderTempC}°C" };
         var tempSlider = new Slider { Minimum = 200, Maximum = 480, Value = _board.SolderTempC, TickFrequency = 10 };
@@ -262,8 +296,9 @@ public partial class MainWindow : Window
         clearWires.Click += (_, _) =>
         {
             _board.Data.Wires.Clear();
+            _board.Data.FreeWires.Clear();
             RefreshState();
-            Log("Удалены все соединения");
+            Log("Удалены все соединения и свободные линии");
         };
         SideContent.Children.Add(clearWires);
         _wireGrid = BuildWireGrid();
@@ -478,7 +513,7 @@ public partial class MainWindow : Window
         SideContent.Children.Add(SectionTitle("СТАТИСТИКА"));
         var stats = new TextBlock
         {
-            Text = $"Деталей: {_board.Data.Components.Count}\nСоединений: {_board.Data.Wires.Count}\nЗамеров: {_board.Data.Measurements.Count}",
+            Text = $"Деталей: {_board.Data.Components.Count}\nСоединений: {_board.Data.Wires.Count + _board.Data.FreeWires.Count} (свободных линий: {_board.Data.FreeWires.Count})\nЗамеров: {_board.Data.Measurements.Count}\nКорпус: {_board.Data.CaseType}",
             TextWrapping = TextWrapping.Wrap
         };
         SideContent.Children.Add(stats);
@@ -532,8 +567,8 @@ public partial class MainWindow : Window
             "Camera" => "Камера: тащите левой кнопкой • колесо — масштаб",
             "MoveBoard" => "Перемещение платы: тащите левой кнопкой",
             "Move" => "Перемещение детали: перетащите её мышкой",
-            "Wire" => "Провода: клик по первому пину, затем по второму",
-            "Solder" => "Пайка: клик два пина — дорожка/наплывы, качество от температуры",
+            "Wire" => "Провод: зажмите ЛКМ и ведите линию по плате. Без пинов и привязки",
+            "Solder" => "Пайка: ведите линию мышью — наплывы встанут по пути, качество от температуры",
             "Sim" => "Симуляция: клик по кнопке/потенциометру на плате",
             "Measure" => "Замер: клик точка → клик точка (по отверстиям 2.54 мм)",
             "Delete" => "Удаление: клик по детали",

@@ -121,6 +121,30 @@ public sealed class WireConn
     public string Side { get; set; } = "Top"; // Top | Bottom — сторона платы
 }
 
+/// <summary>Точка свободной линии на плате (координаты в отверстиях, НЕ привязана к пину).</summary>
+public sealed class FreePoint
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+    public FreePoint() { }
+    public FreePoint(double x, double y) { X = x; Y = y; }
+}
+
+/// <summary>
+/// Свободно проложенный провод/дорожка: пользователь сам ведёт линию мышью.
+/// Никакого автоснапа к пинам: путь хранится ровно как нарисован.
+/// </summary>
+public sealed class FreeWire
+{
+    public List<FreePoint> Points { get; set; } = new();
+    public string Style { get; set; } = "wire"; // wire | solder
+    public string Color { get; set; } = "#d32f2f";
+    public string Side { get; set; } = "Top";   // Top | Bottom
+    public string Quality { get; set; } = "good";
+    public int TempC { get; set; } = 350;
+    public bool Flux { get; set; } = true;
+}
+
 public sealed class Measurement
 {
     public double AX { get; set; }
@@ -139,7 +163,10 @@ public sealed class ProjectData
 {
     public List<PlacedComponent> Components { get; set; } = new();
     public List<WireConn> Wires { get; set; } = new();
+    public List<FreeWire> FreeWires { get; set; } = new();
     public List<Measurement> Measurements { get; set; } = new();
+    /// <summary>Корпус платы: None | Acrylic | Black | BlueMetal.</summary>
+    public string CaseType { get; set; } = "None";
     public string Code { get; set; } = FirmwareExamples.All[0].Code;
     // runtime (не сериализуются целиком, но Json не повредит)
     public Dictionary<string, int> PinOutputs { get; set; } = new();
@@ -156,14 +183,26 @@ public sealed class ProjectData
     public int PinOutput(PlacedComponent c, string pin) =>
         PinOutputs.TryGetValue(c.Id + ":" + pin, out var v) ? v : 0;
 
-    public List<object> WireRows() => Wires.Select(w => (object)new
+    public List<object> WireRows()
     {
-        A = $"{ById(w.AId)?.Def.Title ?? "?"}.{w.APin}",
-        B = $"{ById(w.BId)?.Def.Title ?? "?"}.{w.BPin}",
-        Style = w.Style == "solder" ? "пайка" : "провод",
-        Side = w.Side,
-        Quality = w.Quality switch { "cold" => "холодная 🥶", "hot" => "перегрев 🔥", _ => "хорошая ✨" }
-    }).ToList();
+        var rows = Wires.Select(w => (object)new
+        {
+            A = $"{ById(w.AId)?.Def.Title ?? "?"}.{w.APin}",
+            B = $"{ById(w.BId)?.Def.Title ?? "?"}.{w.BPin}",
+            Style = w.Style == "solder" ? "пайка" : "провод",
+            Side = w.Side,
+            Quality = w.Quality switch { "cold" => "холодная 🥶", "hot" => "перегрев 🔥", _ => "хорошая ✨" }
+        }).ToList();
+        rows.AddRange(FreeWires.Select(f => (object)new
+        {
+            A = "Свободная линия",
+            B = $"{f.Points.Count} точек",
+            Style = f.Style == "solder" ? "пайка (ручная)" : "провод (ручной)",
+            Side = f.Side,
+            Quality = f.Quality switch { "cold" => "холодная 🥶", "hot" => "перегрев 🔥", _ => "хорошая ✨" }
+        }));
+        return rows;
+    }
 
     public List<object> MeasurementRows() => Measurements.Select(m => (object)new
     {
@@ -213,7 +252,19 @@ public sealed class ProjectData
         var oled = Add("oled", 2, 6);
         var nrf = Add("nrf24", 27, 15);
         void Wire(PlacedComponent a, string ap, PlacedComponent b, string bp, string col, string style = "wire", string side = "Top")
-            => p.Wires.Add(new WireConn { AId = a.Id, APin = ap, BId = b.Id, BPin = bp, Color = col, Style = style, Side = side });
+        {
+            // Демо тоже рисуется свободными линиями: путь ровно такой, как проведён.
+            var pa = a.Def.Pins.First(x => x.Name == ap);
+            var pb = b.Def.Pins.First(x => x.Name == bp);
+            var (ax, ay) = (a.X + pa.Dx + 0.5, a.Y + pa.Dy + 0.5);
+            var (bx, by) = (b.X + pb.Dx + 0.5, b.Y + pb.Dy + 0.5);
+            var pts = new List<FreePoint> { new(ax, ay), new((ax + bx) / 2.0, ay), new((ax + bx) / 2.0, by), new(bx, by) };
+            p.FreeWires.Add(new FreeWire
+            {
+                Points = pts, Color = col, Style = style, Side = side,
+                Quality = "good", TempC = 350, Flux = true
+            });
+        }
         Wire(bat, "+", esp, "VIN", "#d32f2f");
         Wire(bat, "-", esp, "GND", "#212121", "wire", "Bottom");
         Wire(esp, "D13", res, "1", "#ff6f00");
@@ -234,14 +285,16 @@ public sealed class ProjectData
     {
         var dto = new ProjectData
         {
-            Components = Components, Wires = Wires, Measurements = Measurements, Code = Code,
-            Cols = Cols, Rows = Rows
+            Components = Components, Wires = Wires, FreeWires = FreeWires, Measurements = Measurements,
+            Code = Code, CaseType = CaseType, Cols = Cols, Rows = Rows
         };
         File.WriteAllText(path, JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));
     }
     public static ProjectData Load(string path)
     {
         var p = JsonSerializer.Deserialize<ProjectData>(File.ReadAllText(path)) ?? CreateDemo();
+        p.FreeWires ??= new();
+        p.CaseType ??= "None";
         p.PinOutputs = new(); p.PinModes = new(); p.Pressed = new();
         return p;
     }
@@ -279,12 +332,49 @@ public static class Circuit
 
     private static string Node(PlacedComponent c, string pin) => c.Id + "|" + pin;
 
+    private static (double, double) PinCenter(PlacedComponent c, PinDef pin)
+    {
+        var (px, py) = c.PinPos(pin);
+        return (c.X + px + 0.5, c.Y + py + 0.5);
+    }
+
+    private static double PointSegmentDistance(double px, double py, double ax, double ay, double bx, double by)
+    {
+        double dx = bx - ax, dy = by - ay;
+        double len2 = dx * dx + dy * dy;
+        double t = len2 < 1e-9 ? 0 : Math.Clamp(((px - ax) * dx + (py - ay) * dy) / len2, 0, 1);
+        double cx = ax + t * dx, cy = ay + t * dy;
+        return Math.Sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+    }
+
     private static UF BuildUF(ProjectData p)
     {
         var uf = new UF();
         foreach (var c in p.Components)
             foreach (var pin in c.Def.Pins) uf.Find(Node(c, pin.Name));
         foreach (var w in p.Wires) uf.Union(w.AId + "|" + w.APin, w.BId + "|" + w.BPin);
+        // Свободные линии: контакт только там, где линия реально прошла по площадке.
+        foreach (var fw in p.FreeWires)
+        {
+            if (fw.Points.Count < 2) continue;
+            var touched = new List<string>();
+            foreach (var c in p.Components)
+                foreach (var pin in c.Def.Pins)
+                {
+                    var (px, py) = PinCenter(c, pin);
+                    for (int i = 0; i + 1 < fw.Points.Count; i++)
+                    {
+                        var a = fw.Points[i];
+                        var b = fw.Points[i + 1];
+                        if (PointSegmentDistance(px, py, a.X, a.Y, b.X, b.Y) <= 0.62)
+                        {
+                            touched.Add(Node(c, pin.Name));
+                            break;
+                        }
+                    }
+                }
+            for (int i = 1; i < touched.Count; i++) uf.Union(touched[0], touched[i]);
+        }
         foreach (var c in p.Components.Where(c => c.Type == "button" && p.Pressed.Contains(c.Id)))
         {
             uf.Union(Node(c, "1"), Node(c, "2"));
