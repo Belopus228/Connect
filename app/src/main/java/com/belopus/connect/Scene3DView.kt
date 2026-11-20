@@ -135,7 +135,7 @@ class Scene3DView @JvmOverloads constructor(
         return floatArrayOf(x, y, w, d)
     }
 
-    fun pinWorld(c: PlacedComponent, pin: PinDef): Vec {
+    private fun pinWorld(c: PlacedComponent, pin: PinDef): Vec {
         val (px, py) = c.pinPos(pin)
         return Vec(
             (c.gridX + px) * 2.54f + 1.27f,
