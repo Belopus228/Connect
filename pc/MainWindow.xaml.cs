@@ -36,7 +36,7 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tutorial");
-        Log("✅ Connect v2.2 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.3 — нативная Windows-сборка открыта");
         Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
@@ -72,6 +72,11 @@ public partial class MainWindow : Window
     }
 
     private void TutorialBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("tutorial");
+
+    private void ModeRail_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button b && b.Tag is string mode) SetMode(mode);
+    }
     private void AddBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("add");
     private void ToolsBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("tools");
     private void EspPanelBtn_Click(object sender, RoutedEventArgs e) => ShowPanel("esp");
@@ -145,30 +150,13 @@ public partial class MainWindow : Window
     private void BuildToolsPanel()
     {
         SideContent.Children.Add(SectionTitle("РЕЖИМ РАБОТЫ"));
-        var modeGroup = new StackPanel();
-        var modes = new[]
+        SideContent.Children.Add(new TextBlock
         {
-            ("Camera", "📷 Камера: поворот/наклон"), ("MoveBoard", "✋ Плату: перемещение"),
-            ("Move", "↔ Деталь: двигать"), ("Wire", "✒ Провод (звенья: ЛКМ/колесо/ПКМ)"),
-            ("Solder", "✒ Пайка (звенья: ЛКМ/колесо/ПКМ)"), ("Sim", "🖱 Симуляция (клик)"),
-            ("Measure", "📏 Замер"), ("Delete", "🗑 Удалить")
-        };
-        RadioButton current = null;
-        foreach (var (mode, label) in modes)
-        {
-            var rb = new RadioButton
-            {
-                Content = label,
-                GroupName = "modes",
-                Margin = new Thickness(2, 2, 2, 2),
-                IsChecked = _board.Mode == mode
-            };
-            if (rb.IsChecked == true) current = rb;
-            rb.Checked += (_, _) => SetMode(mode);
-            modeGroup.Children.Add(rb);
-        }
-        _ = current;
-        SideContent.Children.Add(modeGroup);
+            Text = "Режимы переключаются на левой панели инструментов:\n📷 камера • ✋ плата • ↔ деталь • ✒ провод • 🔥 пайка • 🖱 симуляция • 📏 замер • 🗑 удалить.\n\nАктивный режим подсвечен голубым.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
+            Margin = new Thickness(0, 0, 0, 4)
+        });
 
         SideContent.Children.Add(SectionTitle("ПЛАТА: ПОВОРОТ И СТОРОНА"));
         var rotRow = new StackPanel { Orientation = Orientation.Horizontal };
@@ -318,33 +306,87 @@ public partial class MainWindow : Window
     // -------------------- TUTORIAL --------------------
     private int _tutorialIndex;
 
-    private static readonly (string Title, string Body, string Mode)[] TutorialSteps =
+    private static readonly (string Title, string Body, string Try, string Mode)[] TutorialSteps =
     {
         ("Добро пожаловать в Connect!",
-         "Это 3D-симулятор электроники. Слева — плата, сверху — главные действия, справа — панель с инструментами.\n\nВсё кликабельное теперь с обводкой: наведите курсор — кнопка подсветится. Этот туториал можно в любой момент открыть кнопкой «🎓 Туториал» сверху.", "Camera"),
-        ("Камера: вращение следует за рукой",
-         "Зажмите ЛЕВУЮ кнопку мыши и ведите — модель поворачивается ЗА курсором, как будто вы держите плату рукой.\n\nТо же самое — зажатым КОЛЁСИКОМ мыши (средней кнопкой) в любом режиме. Колесо без зажатия — масштаб. Режим «✋ Плату» двигает плату, не вращая.", "Camera"),
-        ("Добавление деталей",
-         "Кнопка «＋ Добавить» сверху. Деталь можно ПЕРЕТАЩИТЬ мышкой прямо на плату или кликнуть — она встанет в свободное место.\n\nЗатем режим «↔ Деталь» — перетаскивание деталей по плате.", "Move"),
+         "Это 3D-симулятор электроники: слева — панель режимов, по центру — плата, справа — инструменты, сверху — проекты и запуск.",
+         "Нажмите «Далее» — каждый шаг сам включит нужный режим, а вы сразу попробуете на плате.", "Camera"),
+        ("Камера без инверсии",
+         "Зажмите левую кнопку и ведите мышь: плата поворачивается за рукой — вправо, влево, вверх и вниз. То же вращение — зажатым колёсиком мыши в любом режиме.",
+         "Повращайте плату левой и средней кнопкой. Колесо без зажатия — масштаб.", "Camera"),
+        ("Детали на плату",
+         "Кнопка «＋ Добавить» сверху: деталь перетаскивается мышкой на плату. Режим «↔ Деталь» (слева) двигает детали по плате, «✋ Плата» — саму плату.",
+         "Добавьте светодиод и резистор и подвиньте их режимом «Деталь».", "Move"),
         ("Провода по звеньям",
-         "Режим «✒ Провод» в Инструментах. Управляйте как в CAD:\n\n• ЛКМ — поставить очередное звено;\n• КОЛЕСО мыши — длина (дальность) следующего звена, видна жёлтая подпись у курсора;\n• ПКМ — завершить провод.\n\nНикакой привязки к пинам: линия идёт ровно по вашим звеньям.", "Wire"),
-        ("Пайка и температура",
-         "Режим «✒ Пайка» ставится так же звеньями. Перед работой выставьте температуру жала (200–480°C) и флюс в Инструментах:\n\n• 320–380°C + флюс — блестящая пайка;\n• <280°C — холодная (трещины);\n• >430°C — перегрев и поджог платы.\n\nСторона платы для новых линий: Top/Bottom там же.", "Solder"),
-        ("Корпус, стороны и замер",
-         "В Инструментах: «Смотреть НИЗ» переворачивает плату, список Top/Bottom выбирает сторону новых линий, а «Корпус платы» добавляет акриловый/чёрный/металлический корпус с крышкой и винтами.\n\nРежим «📏 Замер»: два клика по отверстиям — расстояние в мм.", "Measure"),
+         "ЛКМ ставит звено, колесо мыши меняет длину следующего звена (подпись у курсора), ПКМ завершает провод. Линия идёт только по вашим точкам — без привязки к пинам, а подписи контактов напечатаны прямо на текстолите.",
+         "Проведите провод от батареи к ESP32 тремя-четырьмя звеньями.", "Wire"),
+        ("Пайка — это температура",
+         "В «Инструментах» выставьте жало 320–380°C и включите флюс — пайка будет блестящей. Холодная пайка (<280°C) трескается, перегрев (>430°C) жжёт плату. Сторона линий — Top/Bottom.",
+         "Поставьте режим «Пайка» слева и припаяйте резистор к светодиоду.", "Solder"),
+        ("Корпус, низ платы, замер",
+         "«Инструменты → Корпус платы»: акрил с прозрачной крышкой, чёрный ABS или металл. «Смотреть НИЗ» — обратная сторона. Режим «Замер»: два клика — расстояние в миллиметрах.",
+         "Добавьте акриловый корпус и замерьте диагональ платы.", "Measure"),
         ("Прошивка и запуск",
-         "Кнопка «⌨ Прошивка»: выберите пример или напишите свой код, затем «▶ Запуск». Панель ESP сверху показывает живые выводы HIGH/LOW.\n\nВ режиме «🖱 Симуляция» кликайте по кнопке и потенциометру прямо на плате. Проект сохраняется кнопкой «💾 Проект».", "Sim"),
+         "«⌨ Прошивка» сверху: примеры кода или свой, кнопка «▶ Запуск». Панель ESP показывает живые HIGH/LOW, в режиме «Симуляция» кликаются кнопка и потенциометр на плате. Проект — «💾 Проект».",
+         "Запустите демо-прошивку и посмотрите, как мигает D13.", "Sim"),
+        ("Готово!",
+         "Вы знаете всё основное: камера, детали, провода звеньями, пайка, корпус, замеры и прошивка. Туториал всегда доступен кнопкой «🎓 Туториал» сверху.",
+         "Удачных схем! Дальше — «Инструменты» и кнопка «Демо» для готовой схемы.", "Camera"),
     };
 
     private void BuildTutorialPanel()
     {
         _tutorialIndex = Math.Clamp(_tutorialIndex, 0, TutorialSteps.Length - 1);
         var step = TutorialSteps[_tutorialIndex];
-        SideContent.Children.Add(SectionTitle($"ШАГ {_tutorialIndex + 1} ИЗ {TutorialSteps.Length}"));
+        int n = TutorialSteps.Length;
+
+        SideContent.Children.Add(SectionTitle($"ТУТОРИАЛ • ШАГ {_tutorialIndex + 1} ИЗ {n}"));
+        // полоса прогресса
+        var track = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(15, 23, 42)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(47, 77, 109)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Height = 14,
+            Margin = new Thickness(0, 0, 0, 4)
+        };
+        var fillHost = new Grid();
+        var fill = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(34, 197, 94)),
+            CornerRadius = new CornerRadius(6),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Width = 248.0 * (_tutorialIndex + 1) / n
+        };
+        fillHost.Children.Add(fill);
+        track.Child = fillHost;
+        SideContent.Children.Add(track);
+        // точки шагов
+        var dots = new TextBlock
+        {
+            FontSize = 13,
+            Margin = new Thickness(0, 0, 0, 6),
+            Foreground = new SolidColorBrush(Color.FromRgb(56, 189, 248)),
+            Text = string.Concat(Enumerable.Range(0, n).Select(i => i == _tutorialIndex ? "● " : i < _tutorialIndex ? "● " : "○ "))
+        };
+        // пройденные точки — зелёным показать нельзя в одном TextBlock; используем два цвета через Runs
+        dots.Inlines.Clear();
+        for (int i = 0; i < n; i++)
+        {
+            dots.Inlines.Add(new System.Windows.Documents.Run(i == _tutorialIndex ? "● " : "● ")
+            {
+                Foreground = new SolidColorBrush(i < _tutorialIndex
+                    ? Color.FromRgb(34, 197, 94)
+                    : i == _tutorialIndex ? Color.FromRgb(56, 189, 248) : Color.FromRgb(71, 85, 105))
+            });
+        }
+        SideContent.Children.Add(dots);
+
         SideContent.Children.Add(new TextBlock
         {
             Text = step.Title,
-            FontSize = 15,
+            FontSize = 16,
             FontWeight = FontWeights.Bold,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 2, 0, 6)
@@ -354,28 +396,48 @@ public partial class MainWindow : Window
             Text = step.Body,
             TextWrapping = TextWrapping.Wrap,
             Foreground = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
-            Margin = new Thickness(0, 0, 0, 10)
+            Margin = new Thickness(0, 0, 0, 8)
         });
+        var tryCard = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(20, 35, 30)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(34, 197, 94)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(9, 7, 9, 7),
+            Margin = new Thickness(0, 0, 0, 10),
+            Child = new TextBlock
+            {
+                Text = "✋ Попробуйте: " + step.Try,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromRgb(187, 247, 208))
+            }
+        };
+        SideContent.Children.Add(tryCard);
+
         var nav = new StackPanel { Orientation = Orientation.Horizontal };
         var prev = new Button { Content = "← Назад", IsEnabled = _tutorialIndex > 0 };
         prev.Click += (_, _) => { _tutorialIndex--; BuildTutorialRefresh(); };
-        var next = new Button { Content = _tutorialIndex == TutorialSteps.Length - 1 ? "✓ К работе" : "Далее →" };
+        var next = new Button
+        {
+            Content = _tutorialIndex == n - 1 ? "✓ Завершить" : "Далее →",
+            Background = new SolidColorBrush(Color.FromRgb(22, 163, 74)),
+            Foreground = Brushes.White
+        };
         next.Click += (_, _) =>
         {
-            if (_tutorialIndex == TutorialSteps.Length - 1) { ShowPanel("tools"); return; }
+            if (_tutorialIndex == n - 1) { ShowPanel("tools"); return; }
             _tutorialIndex++;
             BuildTutorialRefresh();
         };
         nav.Children.Add(prev);
         nav.Children.Add(next);
         SideContent.Children.Add(nav);
-        SideContent.Children.Add(new TextBlock
-        {
-            Text = "Режим платы уже переключён под этот шаг — пробуйте прямо на плате.",
-            TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)),
-            Margin = new Thickness(0, 8, 0, 0)
-        });
+
+        var skip = new Button { Content = "Пропустить туториал", HorizontalAlignment = HorizontalAlignment.Left };
+        skip.Click += (_, _) => ShowPanel("tools");
+        SideContent.Children.Add(skip);
+
         if (step.Mode != null) SetMode(step.Mode);
     }
 
@@ -655,6 +717,25 @@ public partial class MainWindow : Window
             "Delete" => "Удаление: клик по детали",
             _ => ""
         };
+        var rail = new Dictionary<string, Button>
+        {
+            ["Camera"] = RailCamera, ["MoveBoard"] = RailMoveBoard, ["Move"] = RailMove,
+            ["Wire"] = RailWire, ["Solder"] = RailSolder, ["Sim"] = RailSim,
+            ["Measure"] = RailMeasure, ["Delete"] = RailDelete
+        };
+        foreach (var kv in rail)
+        {
+            if (_board.Mode == kv.Key)
+            {
+                kv.Value.Background = new SolidColorBrush(Color.FromRgb(14, 116, 144));
+                kv.Value.BorderBrush = new SolidColorBrush(Color.FromRgb(34, 211, 238));
+            }
+            else
+            {
+                kv.Value.ClearValue(BackgroundProperty);
+                kv.Value.ClearValue(BorderBrushProperty);
+            }
+        }
         if (_wireGrid != null) _wireGrid.ItemsSource = _board.Data.WireRows();
         if (_measureGrid != null) _measureGrid.ItemsSource = _board.Data.MeasurementRows();
         RefreshEspPins();

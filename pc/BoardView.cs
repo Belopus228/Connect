@@ -227,6 +227,7 @@ public sealed class BoardView : FrameworkElement
                 var p = Project(gx + 0.5, gy + 0.5, 0.02);
                 dc.DrawEllipse(Brush(bottom ? "#4e342e" : "#0b3d20"), null, p, 1.7 * Zoom, 1.3 * Zoom);
             }
+        DrawBoardTraces(dc, occupied);
         var silk = Project(1, Data.Rows - 0.6, 0.05);
         Text(dc, bottom ? "СОЛДЕРНАЯ СТОРОНА (BOTTOM)" : "CONNECT PCB • REV 2.0 • TOP", silk, 7, "#cfe8d4", center: false);
 
@@ -274,6 +275,7 @@ public sealed class BoardView : FrameworkElement
             Text(dc, $"звено {LinkLengthCells:F1} кл. = {LinkLengthCells * 2.54:F1} мм", new Point(ep.X, ep.Y - 13), 8, "#facc15", bold: true);
         }
         DrawCaseFront(dc);
+        DrawContactLabels(dc, bottom);
         // подписи: маленькие, только выбранное и экраны
         DrawLabels(dc, state, bottom);
         // замеры
@@ -304,6 +306,23 @@ public sealed class BoardView : FrameworkElement
             Add(new[] { b, c, g, f }, col);
             Add(new[] { c, d, h, g }, col);
             Add(new[] { d, a, e, h }, col);
+        }
+
+        public void BevelBox(double x1, double y1, double z1, double x2, double y2, double z2, double b, string col)
+        {
+            // корпус со скошенной верхней кромкой: низ -> вертикальные стенки -> фаска -> крышка
+            double zm = z2 - b;
+            var bot = new[] { new V3(x1, y1, z1), new V3(x2, y1, z1), new V3(x2, y2, z1), new V3(x1, y2, z1) };
+            var mid = new[] { new V3(x1, y1, zm), new V3(x2, y1, zm), new V3(x2, y2, zm), new V3(x1, y2, zm) };
+            var top = new[] { new V3(x1 + b, y1 + b, z2), new V3(x2 - b, y1 + b, z2), new V3(x2 - b, y2 - b, z2), new V3(x1 + b, y2 - b, z2) };
+            Add(new[] { bot[3], bot[2], bot[1], bot[0] }, col);
+            for (int i = 0; i < 4; i++)
+            {
+                int j = (i + 1) % 4;
+                Add(new[] { bot[i], bot[j], mid[j], mid[i] }, col);   // стенка
+                Add(new[] { mid[i], mid[j], top[j], top[i] }, col);   // фаска
+            }
+            Add(top, col);
         }
 
         public void CylZ(double cx, double cy, double z1, double z2, double r, string col, int seg = 16)
@@ -373,6 +392,41 @@ public sealed class BoardView : FrameworkElement
         return (c.X + rx, c.Y + ry);
     }
 
+    private void DrawBoardTraces(DrawingContext dc, HashSet<(int, int)> occupied)
+    {
+        // декоративные печатные дорожки текстолита между отверстиями
+        var pen = PenOf("#1e7a46", 2.0, 70);
+        for (int gy = 2; gy < Data.Rows - 3; gy += 4)
+            for (int gx = 2; gx < Data.Cols - 4; gx += 5)
+            {
+                if (occupied.Contains((gx, gy)) || occupied.Contains((gx + 3, gy + 2))) continue;
+                DrawPolyline(dc, new[]
+                {
+                    Project(gx + 0.5, gy + 0.5, 0.03), Project(gx + 3.5, gy + 0.5, 0.03), Project(gx + 3.5, gy + 2.5, 0.03)
+                }, pen);
+            }
+    }
+
+    private void DrawContactLabels(DrawingContext dc, bool bottom)
+    {
+        // Подписи контактов прямо на текстолите (как заводская шелкография):
+        // мелкий шрифт у каждой площадки, наружу от центра детали.
+        foreach (var c in Data.Components)
+        {
+            var (ew, eh) = c.EffSize;
+            double cx = c.X + ew / 2.0, cy = c.Y + eh / 2.0;
+            foreach (var pin in c.Def.Pins)
+            {
+                var (px, py) = PinWorld(c, pin);
+                double dx = px - cx, dy = py - cy;
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                if (len < 0.01) { dx = 0; dy = -1; len = 1; }
+                var sp = Project(px + dx / len * 0.70, py + dy / len * 0.70, 0.10);
+                Text(dc, pin.Name, sp, Zoom < 0.85 ? 5.2 : 6.0, bottom ? "#e8d9b0" : "#d9ead3");
+            }
+        }
+    }
+
     private void DrawMeshFaces(DrawingContext dc, List<(Face3, PlacedComponent)> items)
     {
         var rendered = new List<(Point[] Pts, string Color, double Depth, double Shade)>();
@@ -423,7 +477,7 @@ public sealed class BoardView : FrameworkElement
             case "esp32":
             {
                 bool powered = state.EspPowered.Contains(c.Id) && Data.Running;
-                m.Box(0, 0, 0.25, w, h, 0.85, "#1a237e");
+                m.BevelBox(0, 0, 0.25, w, h, 0.85, 0.16, "#1a237e");
                 m.Box(0, 0, 0.30, 0.55, h, 0.85, "#101418");
                 m.Box(w - 0.55, 0, 0.30, w, h, 0.85, "#101418");
                 m.Box(w * 0.24, h * 0.30, 0.85, w * 0.76, h * 0.74, 2.0, "#c7ccd4");   // экран WROOM
@@ -436,6 +490,13 @@ public sealed class BoardView : FrameworkElement
                 m.CylZ(0.85, 1.15, 0.85, 1.5, 0.55, "#263238", 12);                    // EN
                 m.CylZ(w - 0.85, 1.15, 0.85, 1.5, 0.55, "#263238", 12);               // BOOT
                 m.Box(w * 0.30, h * 0.78, 0.85, w * 0.48, h * 0.90, 1.25, "#8f979e"); // кварц
+                // SMD-компоненты вокруг модуля: конденсаторы/резисторы 0402
+                var smd = new[] { (0.10, 0.35), (0.10, 0.50), (0.10, 0.65), (0.86, 0.40), (0.86, 0.58), (0.40, 0.82), (0.60, 0.82) };
+                foreach (var (fx, fy) in smd)
+                    m.Box(w * fx, h * fy, 0.85, w * fx + 0.55, h * fy + 0.38, 1.12, (fx * 10 + fy) % 2 < 1 ? "#37474f" : "#6d4c2f");
+                // винты крепления модуля
+                m.CylZ(0.55, 0.55, 0.85, 1.05, 0.26, "#90a4ae", 10);
+                m.CylZ(w - 0.55, h - 0.55, 0.85, 1.05, 0.26, "#90a4ae", 10);
                 m.Box(w - 1.3, 2.2, 0.9, w - 0.7, 2.8, 1.25, powered ? "#69f0ae" : "#546e7a"); // PWR LED
                 break;
             }
@@ -443,7 +504,7 @@ public sealed class BoardView : FrameworkElement
             case "tft":
             case "tft18":
             case "lcd1602":
-                m.Box(0, 0, 0.25, w, h, 0.8, d.Color);
+                m.BevelBox(0, 0, 0.25, w, h, 0.8, 0.14, d.Color);
                 m.Box(w * 0.06, h * 0.07, 0.8, w * 0.94, h * 0.93, 1.08, c.Type == "lcd1602" ? "#9ccc65" : "#07141d");
                 m.Box(w * 0.05, h * 0.05, 1.08, w * 0.95, h * 0.10, 1.2, "#607d8b");
                 m.Box(w * 0.05, h * 0.90, 1.08, w * 0.95, h * 0.95, 1.2, "#607d8b");
@@ -481,11 +542,11 @@ public sealed class BoardView : FrameworkElement
                 }
                 break;
             case "button":
-                m.Box(0, 0, 0.2, w, h, 0.95, "#263238");
+                m.BevelBox(0, 0, 0.2, w, h, 0.95, 0.18, "#263238");
                 m.CylZ(w / 2.0, h / 2.0, 0.95, 1.8, 1.05, Data.Pressed.Contains(c.Id) ? "#69f0ae" : "#ef5350", 18);
                 break;
             case "bat18650":
-                m.Box(0, 0, 0.1, w, h, 0.75, "#37474f");
+                m.BevelBox(0, 0, 0.1, w, h, 0.75, 0.15, "#37474f");
                 m.CylX(0.35, w - 0.35, h / 2.0, 1.6, 1.5, "#2e7d32", 22);
                 m.CylX(w * 0.42, w * 0.58, h / 2.0, 1.6, 1.53, "#a5d6a7", 22);
                 m.CylX(w - 0.6, w - 0.32, h / 2.0, 1.6, 1.52, "#9aa0a6", 22);
@@ -506,13 +567,13 @@ public sealed class BoardView : FrameworkElement
                 m.CylZ(w / 2.0, h / 2.0, zt * 0.85, zt * 0.92, 0.42, "#0b1220", 12);
                 break;
             case "dht22":
-                m.Box(0, 0, 0.2, w, h, zt * 0.8, "#eceff1");
+                m.BevelBox(0, 0, 0.2, w, h, zt * 0.8, 0.16, "#eceff1");
                 for (int i = 0; i < 4; i++)
                     m.Box(w * 0.1, h * (0.18 + i * 0.16), zt * 0.8, w * 0.9, h * (0.18 + i * 0.16) + 0.18, zt * 0.86, "#90a4ae");
                 break;
             case "pot":
             {
-                m.Box(0, 0, 0.2, w, h, 1.8, "#263238");
+                m.BevelBox(0, 0, 0.2, w, h, 1.8, 0.16, "#263238");
                 m.CylZ(w / 2.0, h / 2.0, 1.8, 3.3, 1.35, "#78909c", 20);
                 int val = int.TryParse(c.Prop("value", "512"), out var vv) ? vv : 512;
                 double ang = val / 1023.0 * 270.0 - 135.0;
@@ -523,14 +584,14 @@ public sealed class BoardView : FrameworkElement
             {
                 m.Box(-0.5, h * 0.3, 0.2, 0, h * 0.7, 0.7, "#0d47a1");
                 m.Box(w, h * 0.3, 0.2, w + 0.5, h * 0.7, 0.7, "#0d47a1");
-                m.Box(0, 0, 0.2, w, h, zt * 0.55, "#1565c0");
+                m.BevelBox(0, 0, 0.2, w, h, zt * 0.55, 0.16, "#1565c0");
                 m.CylZ(w / 2.0, h / 2.0, zt * 0.55, zt * 0.78, 0.95, "#eceff1", 16);
                 int angDeg = int.TryParse(c.Prop("angle", "90"), out var av) ? av : 90;
                 m.RotBox(w / 2.0, h / 2.0, zt * 0.78, zt * 0.92, 4.6, 0.95, angDeg - 90, "#ffffff");
                 break;
             }
             case "relay":
-                m.Box(0, 0, 0.2, w, h, zt * 0.65, d.Color);
+                m.BevelBox(0, 0, 0.2, w, h, zt * 0.65, 0.18, d.Color);
                 m.Box(w * 0.12, h * 0.14, zt * 0.65, w * 0.88, h * 0.86, zt * 0.78, "#1e6fd9");
                 break;
             case "cap":
@@ -558,6 +619,17 @@ public sealed class BoardView : FrameworkElement
 
     private void DrawDynamicOverlays(DrawingContext dc, CircuitResult state)
     {
+        foreach (var c in Data.Components.Where(c => c.Type == "esp32"))
+        {
+            var tp = ProjectLocal(c, c.Def.W / 2.0, c.Def.H * 0.52, 2.20);
+            Text(dc, "ESP32-WROOM", tp, 6.5, "#37474f", bold: true);
+        }
+        foreach (var c in Data.Components.Where(c => c.Type == "bat18650"))
+        {
+            var (w, h) = (c.Def.W, c.Def.H);
+            Text(dc, "+", ProjectLocal(c, w - 0.45, h / 2.0, 3.30), 10, "#ffffff", bold: true);
+            Text(dc, "18650", ProjectLocal(c, w / 2.0, h / 2.0, 3.25), 6, "#e8f5e9", bold: true);
+        }
         foreach (var c in Data.Components.Where(c => c.Type == "led"))
         {
             var (w, h) = (c.Def.W, c.Def.H);
@@ -1107,7 +1179,7 @@ public sealed class BoardView : FrameworkElement
             CameraAngle -= (pos.X - _lastMouse.X) * 0.35;
             while (CameraAngle > 180) CameraAngle -= 360;
             while (CameraAngle < -180) CameraAngle += 360;
-            Tilt = Math.Clamp(Tilt - (pos.Y - _lastMouse.Y) * 0.003, 0.08, 1.30);
+            Tilt = Math.Clamp(Tilt + (pos.Y - _lastMouse.Y) * 0.003, 0.08, 1.30);
             InvalidateVisual();
         }
         else if (_panning && e.LeftButton == MouseButtonState.Pressed)
