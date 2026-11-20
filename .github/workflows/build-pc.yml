@@ -24,20 +24,47 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path pc-out | Out-Null
-          dotnet publish pc/ConnectPC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o pc-out 2>&1 | Tee-Object pc-build-log.txt
+          dotnet publish pc/ConnectPC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o pc-out 2>&1 | Tee-Object pc-build-log.txt
           "PUBLISH_EXIT=$LASTEXITCODE" | Add-Content pc-build-log.txt
-          if (-not (Test-Path pc-out/ConnectPC.exe)) { Copy-Item pc-build-log.txt ci-output-pc-build-log.txt -ErrorAction SilentlyContinue }
+          if (Test-Path pc-out/ConnectPC.exe) {
+            $sz = (Get-Item pc-out/ConnectPC.exe).Length
+            "EXE_SIZE_BYTES=$sz" | Add-Content pc-build-log.txt
+          }
 
-      - name: Commit EXE
+      - name: Commit EXE (or parts if > 90 MB)
         if: always()
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path ci-output/pc | Out-Null
-          if (Test-Path pc-out/ConnectPC.exe) { Copy-Item pc-out/ConnectPC.exe ci-output/pc/Connect-PC.exe }
-          if (Test-Path pc-build-log.txt) { Copy-Item pc-build-log.txt ci-output/pc/pc-build-log.txt }
+          if (Test-Path pc-build-log.txt) { Copy-Item pc-build-log.txt ci-output/pc/pc-build-log.txt -Force }
+          # убрать возможные старые части
+          Get-ChildItem ci-output/pc -Filter "Connect-PC.exe.part*" -ErrorAction SilentlyContinue | Remove-Item -Force
+          if (Test-Path pc-out/ConnectPC.exe) {
+            $size = (Get-Item pc-out/ConnectPC.exe).Length
+            if ($size -gt 90000000) {
+              # GitHub не принимает файлы >100MB — режем на части по 45MB
+              Remove-Item ci-output/pc/Connect-PC.exe -Force -ErrorAction SilentlyContinue
+              $bytes = [System.IO.File]::ReadAllBytes("pc-out/ConnectPC.exe")
+              $chunk = 45000000
+              $n = [Math]::Ceiling($bytes.Length / $chunk)
+              for ($i = 0; $i -lt $n; $i++) {
+                $len = [Math]::Min($chunk, $bytes.Length - $i * $chunk)
+                $part = New-Object byte[] $len
+                [Array]::Copy($bytes, $i * $chunk, $part, 0, $len)
+                [System.IO.File]::WriteAllBytes(("ci-output/pc/Connect-PC.exe.part{0:D2}" -f ($i + 1)), $part)
+              }
+              "EXE_SPLIT_INTO=$n parts" | Add-Content ci-output/pc/pc-build-log.txt
+            } else {
+              Copy-Item pc-out/ConnectPC.exe ci-output/pc/Connect-PC.exe -Force
+            }
+          }
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add ci-output/pc/Connect-PC.exe ci-output/pc/pc-build-log.txt
-          git commit -m "PC native build [skip ci]" 2>$null
-          git pull --rebase origin ${{ github.ref_name }}
-          git push origin HEAD:${{ github.ref_name }}
+          git add -A ci-output/pc
+          git commit -m "PC native build [skip ci]"
+          for ($try = 1; $try -le 4; $try++) {
+            git pull --rebase origin ${{ github.ref_name }}
+            git push origin HEAD:${{ github.ref_name }}
+            if ($LASTEXITCODE -eq 0) { break }
+            Start-Sleep -Seconds (3 * $try)
+          }
