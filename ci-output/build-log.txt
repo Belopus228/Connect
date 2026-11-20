@@ -25,6 +25,7 @@ Daemon will be stopped at the end of the build
 > Task :app:parseDebugLocalResources
 > Task :app:processDebugMainManifest
 > Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
 > Task :app:javaPreCompileDebug
 > Task :app:mergeDebugShaders
 > Task :app:compileDebugShaders NO-SOURCE
@@ -32,29 +33,864 @@ Daemon will be stopped at the end of the build
 > Task :app:mergeDebugAssets
 > Task :app:compressDebugAssets
 > Task :app:desugarDebugFileDependencies
-> Task :app:processDebugManifestForPackage
-> Task :app:mergeDebugStartupProfile
-> Task :app:mergeDebugJniLibFolders
-> Task :app:checkDebugDuplicateClasses
 > Task :app:processDebugResources
-> Task :app:mergeDebugNativeLibs NO-SOURCE
-> Task :app:compileDebugKotlin
-> Task :app:mergeExtDexDebug
-> Task :app:stripDebugDebugSymbols NO-SOURCE
-> Task :app:mergeLibDexDebug
-> Task :app:validateSigningDebug
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
-> Task :app:compileDebugJavaWithJavac NO-SOURCE
-> Task :app:dexBuilderDebug
-> Task :app:mergeDebugGlobalSynthetics
-> Task :app:processDebugJavaRes
-> Task :app:mergeProjectDexDebug
-> Task :app:mergeDebugJavaResource
-> Task :app:packageDebug
-> Task :app:createDebugApkListingFileRedirect
-> Task :app:assembleDebug
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795169388688.json
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugStartupProfile
 
-BUILD SUCCESSFUL in 1m 30s
-34 actionable tasks: 34 executed
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:459:25 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:459:43 Overload resolution ambiguity between candidates:
+fun String?.plus(other: Any?): String
+fun <T> Array<T>.plus(element: T): Array<T>
+fun IntArray.plus(element: Int): IntArray
+fun LongArray.plus(element: Long): LongArray
+fun ShortArray.plus(element: Short): ShortArray
+fun <T> Collection<T>.plus(element: T): List<T>
+fun <T> Iterable<T>.plus(element: T): List<T>
+fun <T> Set<T>.plus(element: T): Set<T>
+fun <T> Sequence<T>.plus(element: T): Sequence<T>
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:459:50 None of the following candidates is applicable:
+fun BigDecimal.rem(other: BigDecimal): BigDecimal
+fun BigInteger.rem(other: BigInteger): BigInteger
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:460:23 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:460:50 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:461:22 Unresolved reference 'def'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:461:50 Unresolved reference 'def'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:462:23 Method 'iterator()' is ambiguous for this expression. Applicable candidates:
+fun <T> Enumeration<T>.iterator(): Iterator<T>
+fun <T> Iterator<T>.iterator(): Iterator<T>
+fun <K, V> Map<out K, V>.iterator(): Iterator<Map.Entry<K, V>>
+fun <K, V> MutableMap<K, V>.iterator(): MutableIterator<MutableMap.MutableEntry<K, V>>
+fun CharSequence.iterator(): CharIterator
+fun BufferedInputStream.iterator(): ByteIterator
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:462:23 Unresolved reference 'faces'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:463:39 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:464:36 Function 'component1()' is ambiguous for this expression: 
+fun <T> Array<out T>.component1(): T
+fun BooleanArray.component1(): Boolean
+fun ByteArray.component1(): Byte
+fun CharArray.component1(): Char
+fun DoubleArray.component1(): Double
+fun FloatArray.component1(): Float
+fun IntArray.component1(): Int
+fun LongArray.component1(): Long
+fun ShortArray.component1(): Short
+fun <T> List<T>.component1(): T
+fun <K, V> Map.Entry<K, V>.component1(): K
+fun UByteArray.component1(): UByte
+fun UIntArray.component1(): UInt
+fun ULongArray.component1(): ULong
+fun UShortArray.component1(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:464:36 Function 'component2()' is ambiguous for this expression: 
+fun <T> Array<out T>.component2(): T
+fun BooleanArray.component2(): Boolean
+fun ByteArray.component2(): Byte
+fun CharArray.component2(): Char
+fun DoubleArray.component2(): Double
+fun FloatArray.component2(): Float
+fun IntArray.component2(): Int
+fun LongArray.component2(): Long
+fun ShortArray.component2(): Short
+fun <T> List<T>.component2(): T
+fun <K, V> Map.Entry<K, V>.component2(): V
+fun UByteArray.component2(): UByte
+fun UIntArray.component2(): UInt
+fun ULongArray.component2(): ULong
+fun UShortArray.component2(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:465:31 Argument type mismatch: actual type is 'kotlin.Pair<A, B>', but 'K' was expected.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:465:39 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:465:42 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:465:42 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+fun <A, B> A.to(that: B): Pair<A, B>
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:465:47 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:466:32 Argument type mismatch: actual type is 'kotlin.Pair<A, B>', but 'K' was expected.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:466:40 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:466:43 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:466:43 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+fun <A, B> A.to(that: B): Pair<A, B>
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:466:54 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:467:32 Argument type mismatch: actual type is 'kotlin.Pair<A, B>', but 'K' was expected.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:467:34 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:467:36 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:467:47 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:468:33 Argument type mismatch: actual type is 'kotlin.Pair<A, B>', but 'K' was expected.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:468:35 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:468:37 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:468:42 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:470:47 Unresolved reference 'z'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:13 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:22 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:26 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:32 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:34 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:477:34 Function declaration must have a name.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:34 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:34 Function 'component1()' is ambiguous for this expression: 
+fun <T> Array<out T>.component1(): T
+fun BooleanArray.component1(): Boolean
+fun ByteArray.component1(): Byte
+fun CharArray.component1(): Char
+fun DoubleArray.component1(): Double
+fun FloatArray.component1(): Float
+fun IntArray.component1(): Int
+fun LongArray.component1(): Long
+fun ShortArray.component1(): Short
+fun <T> List<T>.component1(): T
+fun <K, V> Map.Entry<K, V>.component1(): K
+fun UByteArray.component1(): UByte
+fun UIntArray.component1(): UInt
+fun ULongArray.component1(): ULong
+fun UShortArray.component1(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:34 Function 'component2()' is ambiguous for this expression: 
+fun <T> Array<out T>.component2(): T
+fun BooleanArray.component2(): Boolean
+fun ByteArray.component2(): Byte
+fun CharArray.component2(): Char
+fun DoubleArray.component2(): Double
+fun FloatArray.component2(): Float
+fun IntArray.component2(): Int
+fun LongArray.component2(): Long
+fun ShortArray.component2(): Short
+fun <T> List<T>.component2(): T
+fun <K, V> Map.Entry<K, V>.component2(): V
+fun UByteArray.component2(): UByte
+fun UIntArray.component2(): UInt
+fun ULongArray.component2(): ULong
+fun UShortArray.component2(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:41 Unresolved reference 'wire'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:41 Argument type mismatch: actual type is 'kotlin.Pair<A, B>', but 'T' was expected.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:41 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:52 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:55 Unresolved reference 'wire'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:66 Unresolved reference 'wire'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:66 Argument type mismatch: actual type is 'kotlin.Pair<A, B>', but 'T' was expected.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:77 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:478:80 Unresolved reference 'wire'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:482:21 Unresolved reference 'wire'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:483:34 Unresolved reference 'jointFaces'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:485:21 Unresolved reference 'wire'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:486:34 Unresolved reference 'jointFaces'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:488:41 Unresolved reference 'wire'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:493:30 Unresolved reference 'jointFaces'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:494:25 Unresolved reference 'jointFaces'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:18 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:19 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:25 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:37 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:39 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:501:42 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:18 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:19 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:25 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:36 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:38 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:502:41 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:18 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:19 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:25 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:37 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:39 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:503:42 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:18 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:19 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:25 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:36 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:38 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:504:41 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:15 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:21 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:23 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:28 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:29 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:34 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:506:35 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:13 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:20 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:22 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:28 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:32 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:33 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:42 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:44 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:507:44 Function declaration must have a name.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:508:32 Unresolved reference 'proj'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:29 Unresolved reference 'proj'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:51 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:64 Unresolved reference 'gridX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:80 Unresolved reference 'gridX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:90 Unresolved reference 'effW'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:100 Unresolved reference 'gy'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:108 Unresolved reference 'gridY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:117 Unresolved reference 'gy'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:124 Unresolved reference 'gridY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:509:134 Unresolved reference 'effH'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:511:57 Unresolved reference 'gy'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:511:68 Overload resolution ambiguity between candidates:
+fun String?.plus(other: Any?): String
+fun <T> Array<T>.plus(element: T): Array<T>
+fun FloatArray.plus(element: Float): FloatArray
+fun <T> Collection<T>.plus(element: T): List<T>
+fun <T> Iterable<T>.plus(element: T): List<T>
+fun <T> Set<T>.plus(element: T): Set<T>
+fun <T> Sequence<T>.plus(element: T): Sequence<T>
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:511:85 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:514:17 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:519:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:519:13 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:519:13 Function declaration must have a name.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:520:61 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:525:13 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:526:62 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:528:13 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:13 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:19 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:23 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:24 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:29 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:31 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:532:31 Function declaration must have a name.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:533:39 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:533:51 'break' and 'continue' are only allowed inside loops.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:534:39 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:534:51 'break' and 'continue' are only allowed inside loops.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:535:60 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:535:72 'break' and 'continue' are only allowed inside loops.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:536:60 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:536:72 'break' and 'continue' are only allowed inside loops.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:539:39 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:554:49 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:561:17 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:563:21 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:566:21 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:569:37 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:575:17 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:577:21 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:580:21 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:583:31 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:585:17 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:592:83 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:594:27 Unresolved reference 'w'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:599:29 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:600:29 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:605:29 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:609:29 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:17 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:18 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:26 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:28 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:30 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:34 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:34 Function declaration must have a name.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:36 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:618:38 Syntax error: Unexpected tokens (use ';' to separate expressions on the same line).
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:619:42 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:620:31 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:623:39 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:628:13 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:13 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:19 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:23 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:24 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:34 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:36 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:634:36 Function declaration must have a name.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:635:28 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:636:25 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:636:33 Method 'iterator()' is ambiguous for this expression. Applicable candidates:
+fun <T> Enumeration<T>.iterator(): Iterator<T>
+fun <T> Iterator<T>.iterator(): Iterator<T>
+fun <K, V> Map<out K, V>.iterator(): Iterator<Map.Entry<K, V>>
+fun <K, V> MutableMap<K, V>.iterator(): MutableIterator<MutableMap.MutableEntry<K, V>>
+fun CharSequence.iterator(): CharIterator
+fun BufferedInputStream.iterator(): ByteIterator
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:637:42 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:637:51 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:638:66 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:640:33 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:641:32 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:653:21 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:656:17 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:658:17 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:663:21 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:15 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:25 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:32 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:33 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:38 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:669:39 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:13 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:19 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:23 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:24 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:34 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:36 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:670:36 Function declaration must have a name.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:671:42 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:672:31 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:673:73 Unresolved reference 'cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:674:19 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:676:30 Unresolved reference 'state'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:676:41 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:677:38 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:678:25 Incompatible types 'kotlin.text.MatchGroup?' and 'kotlin.String'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:678:51 Incompatible types 'kotlin.text.MatchGroup?' and 'kotlin.String'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:678:74 Incompatible types 'kotlin.text.MatchGroup?' and 'kotlin.String'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:679:25 Incompatible types 'kotlin.text.MatchGroup?' and 'kotlin.String'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:682:42 Unresolved reference 'burnt'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:684:25 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:687:25 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:689:46 Unresolved reference 'brightness'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:691:53 Unresolved reference 'brightness'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:692:29 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:692:82 Unresolved reference 'brightness'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:696:60 Unresolved reference 'brightness'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:697:25 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:702:68 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:704:21 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:707:21 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:710:31 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:711:29 Unresolved reference 'isNotEmpty'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:712:43 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:714:45 Unresolved reference 'length'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:714:62 Unresolved reference 'take'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:715:25 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:723:31 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:724:36 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:726:25 Unresolved reference 'c'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:729:13 Unresolved reference 'canvas'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:15 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:21 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:23 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:28 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:29 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:39 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:40 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:41 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:48 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:733:49 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:734:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:734:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:734:15 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:734:24 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:734:26 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:734:29 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:734:31 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:14 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:15 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:25 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:27 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:32 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:33 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:38 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:735:39 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:9 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:15 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:16 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:24 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:25 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:26 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:86 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:87 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:95 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:96 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:98 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:101 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:103 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:106 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:108 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:737:113 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:741:61 Unresolved reference 'Face'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:741:73 Unresolved reference 'Cam'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:742:21 Unresolved reference 'norm'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:742:26 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:744:15 Unresolved reference 'depth'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:744:25 Unresolved reference 'pts'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:744:33 Unresolved reference 'depth'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:744:35 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:744:43 Unresolved reference 'it'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:744:60 Overload resolution ambiguity between candidates:
+fun Array<out Byte>.average(): Double
+fun Array<out Double>.average(): Double
+fun Array<out Float>.average(): Double
+fun Array<out Int>.average(): Double
+fun Array<out Long>.average(): Double
+fun Array<out Short>.average(): Double
+fun ByteArray.average(): Double
+fun DoubleArray.average(): Double
+fun FloatArray.average(): Double
+fun IntArray.average(): Double
+fun LongArray.average(): Double
+fun ShortArray.average(): Double
+fun Iterable<Byte>.average(): Double
+fun Iterable<Double>.average(): Double
+fun Iterable<Float>.average(): Double
+fun Iterable<Int>.average(): Double
+fun Iterable<Long>.average(): Double
+fun Iterable<Short>.average(): Double
+fun Sequence<Byte>.average(): Double
+fun Sequence<Double>.average(): Double
+fun Sequence<Float>.average(): Double
+fun Sequence<Int>.average(): Double
+fun Sequence<Long>.average(): Double
+fun Sequence<Short>.average(): Double
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:746:14 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:746:14 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+fun <T, R : Comparable<R>> MutableList<T>.sortByDescending(crossinline selector: (T) -> R?): Unit
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:746:31 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:746:36 Unresolved reference 'depth'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:748:25 Unresolved reference 'pts'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:748:33 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:748:35 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:748:43 Unresolved reference 'it'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:750:17 Overload resolution ambiguity between candidates:
+fun <T> Array<out T>.forEachIndexed(action: (@ParameterName(...) Int, T) -> Unit): Unit
+fun BooleanArray.forEachIndexed(action: (@ParameterName(...) Int, Boolean) -> Unit): Unit
+fun ByteArray.forEachIndexed(action: (@ParameterName(...) Int, Byte) -> Unit): Unit
+fun CharArray.forEachIndexed(action: (@ParameterName(...) Int, Char) -> Unit): Unit
+fun DoubleArray.forEachIndexed(action: (@ParameterName(...) Int, Double) -> Unit): Unit
+fun FloatArray.forEachIndexed(action: (@ParameterName(...) Int, Float) -> Unit): Unit
+fun IntArray.forEachIndexed(action: (@ParameterName(...) Int, Int) -> Unit): Unit
+fun LongArray.forEachIndexed(action: (@ParameterName(...) Int, Long) -> Unit): Unit
+fun ShortArray.forEachIndexed(action: (@ParameterName(...) Int, Short) -> Unit): Unit
+fun <T> Iterable<T>.forEachIndexed(action: (@ParameterName(...) Int, T) -> Unit): Unit
+fun UByteArray.forEachIndexed(action: (@ParameterName(...) Int, UByte) -> Unit): Unit
+fun UIntArray.forEachIndexed(action: (@ParameterName(...) Int, UInt) -> Unit): Unit
+fun ULongArray.forEachIndexed(action: (@ParameterName(...) Int, ULong) -> Unit): Unit
+fun UShortArray.forEachIndexed(action: (@ParameterName(...) Int, UShort) -> Unit): Unit
+fun <T> Sequence<T>.forEachIndexed(action: (@ParameterName(...) Int, T) -> Unit): Unit
+fun CharSequence.forEachIndexed(action: (@ParameterName(...) Int, Char) -> Unit): Unit
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:750:34 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:750:37 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:750:68 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:750:73 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:750:95 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:750:100 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:27 Unresolved reference 'pts'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:42 Unresolved reference 'norm'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:47 Unresolved reference 'cross'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:53 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:55 Unresolved reference 'pts'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:64 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:66 Unresolved reference 'pts'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:74 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:76 Unresolved reference 'pts'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:85 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:87 Unresolved reference 'pts'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:752:101 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:753:46 Unresolved reference 'dot'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:754:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:755:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:755:27 Unresolved reference 'shade'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:755:35 Unresolved reference 'color'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:756:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:756:29 Unresolved reference 'alpha'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:757:35 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:758:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:759:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:760:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:761:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:761:29 Unresolved reference 'alpha'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:762:35 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:763:13 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:765:9 Unresolved reference 'paint'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:771:19 Unresolved reference 'camera'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:773:27 Unresolved reference 'density'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:776:25 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:776:33 Unresolved reference 'pinWorld'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:785:19 Unresolved reference 'camera'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:787:32 Unresolved reference 'compWorld'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:787:32 Function 'component1()' is ambiguous for this expression: 
+fun <T> Array<out T>.component1(): T
+fun BooleanArray.component1(): Boolean
+fun ByteArray.component1(): Byte
+fun CharArray.component1(): Char
+fun DoubleArray.component1(): Double
+fun FloatArray.component1(): Float
+fun IntArray.component1(): Int
+fun LongArray.component1(): Long
+fun ShortArray.component1(): Short
+fun <T> List<T>.component1(): T
+fun <K, V> Map.Entry<K, V>.component1(): K
+fun UByteArray.component1(): UByte
+fun UIntArray.component1(): UInt
+fun ULongArray.component1(): ULong
+fun UShortArray.component1(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:787:32 Function 'component2()' is ambiguous for this expression: 
+fun <T> Array<out T>.component2(): T
+fun BooleanArray.component2(): Boolean
+fun ByteArray.component2(): Byte
+fun CharArray.component2(): Char
+fun DoubleArray.component2(): Double
+fun FloatArray.component2(): Float
+fun IntArray.component2(): Int
+fun LongArray.component2(): Long
+fun ShortArray.component2(): Short
+fun <T> List<T>.component2(): T
+fun <K, V> Map.Entry<K, V>.component2(): V
+fun UByteArray.component2(): UByte
+fun UIntArray.component2(): UInt
+fun ULongArray.component2(): ULong
+fun UShortArray.component2(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:787:32 Function 'component3()' is ambiguous for this expression: 
+fun <T> Array<out T>.component3(): T
+fun BooleanArray.component3(): Boolean
+fun ByteArray.component3(): Byte
+fun CharArray.component3(): Char
+fun DoubleArray.component3(): Double
+fun FloatArray.component3(): Float
+fun IntArray.component3(): Int
+fun LongArray.component3(): Long
+fun ShortArray.component3(): Short
+fun <T> List<T>.component3(): T
+fun UByteArray.component3(): UByte
+fun UIntArray.component3(): UInt
+fun ULongArray.component3(): ULong
+fun UShortArray.component3(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:787:32 Function 'component4()' is ambiguous for this expression: 
+fun <T> Array<out T>.component4(): T
+fun BooleanArray.component4(): Boolean
+fun ByteArray.component4(): Byte
+fun CharArray.component4(): Char
+fun DoubleArray.component4(): Double
+fun FloatArray.component4(): Float
+fun IntArray.component4(): Int
+fun LongArray.component4(): Long
+fun ShortArray.component4(): Short
+fun <T> List<T>.component4(): T
+fun UByteArray.component4(): UByte
+fun UIntArray.component4(): UInt
+fun ULongArray.component4(): ULong
+fun UShortArray.component4(): UShort.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:789:27 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:789:34 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:789:34 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:789:48 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:789:66 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:789:88 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:790:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:790:18 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:790:18 Not enough information to infer type argument for 'R'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:790:22 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:790:24 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:796:60 Unresolved reference 'Scr'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:800:30 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:800:50 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:801:30 Unresolved reference 'x'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:801:50 Unresolved reference 'y'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:808:5 Modifier 'override' is not applicable to 'top level function'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:811:17 Unresolved reference 'parent'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:812:17 Unresolved reference 'lastX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:812:34 Unresolved reference 'lastY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:813:17 Unresolved reference 'lastPinch'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:820:43 Unresolved reference 'pendingPin'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:822:33 Unresolved reference 'pendingPin'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:824:48 Unresolved reference 'first'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:824:85 Unresolved reference 'second'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:825:33 Unresolved reference 'pendingPin'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:830:57 Unresolved reference 'first'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:830:82 Unresolved reference 'second'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:839:122 Unresolved reference 'first'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:839:151 Unresolved reference 'second'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:840:64 Unresolved reference 'first'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:840:93 Unresolved reference 'second'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:842:33 Unresolved reference 'pendingPin'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:845:29 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:852:29 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:859:55 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:865:55 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:867:102 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:872:29 Unresolved reference 'dragComp'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:873:29 Unresolved reference 'dragStartGridX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:873:58 Unresolved reference 'dragStartGridY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:874:29 Unresolved reference 'dragStartTouchX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:874:56 Unresolved reference 'dragStartTouchY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:875:55 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:878:55 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:886:21 Unresolved reference 'lastPinch'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:892:25 Unresolved reference 'lastPinch'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:893:25 Unresolved reference 'zoom'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:893:33 Unresolved reference 'zoom'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:893:44 Unresolved reference 'lastPinch'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:894:25 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:896:21 Unresolved reference 'lastPinch'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:900:21 Unresolved reference 'camAzimuth'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:900:46 Unresolved reference 'lastX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:900:53 None of the following candidates is applicable:
+fun BigDecimal.times(other: BigDecimal): BigDecimal
+fun BigInteger.times(other: BigInteger): BigInteger
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:901:21 Unresolved reference 'camElevation'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:901:37 Unresolved reference 'camElevation'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:901:63 Unresolved reference 'lastY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:901:70 None of the following candidates is applicable:
+fun BigDecimal.times(other: BigDecimal): BigDecimal
+fun BigInteger.times(other: BigInteger): BigInteger
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:902:21 Unresolved reference 'lastX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:902:38 Unresolved reference 'lastY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:903:21 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:905:26 Unresolved reference 'dragComp'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:907:31 Unresolved reference 'camera'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:908:29 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:908:37 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:909:30 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:909:38 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:910:30 Unresolved reference 'project'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:910:38 Unresolved reference 'Vec'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:914:34 'operator' modifier is required on 'FirNamedFunctionSymbol kotlin/compareTo' in 'compareTo'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:915:46 Unresolved reference 'dragStartTouchX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:916:46 Unresolved reference 'dragStartTouchY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:919:35 Unresolved reference 'dragStartGridX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:919:113 Unresolved reference 'effW'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:920:35 Unresolved reference 'dragStartGridY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:920:113 Unresolved reference 'effH'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:921:38 Unresolved reference 'gridX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:921:56 Unresolved reference 'gridY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:922:32 Unresolved reference 'gridX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:922:47 Unresolved reference 'gridY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:923:29 Unresolved reference 'invalidate'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:928:17 Unresolved reference 'lastX'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:928:34 Unresolved reference 'lastY'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:931:21 Unresolved reference 'dragComp'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:932:21 Unresolved reference 'dragComp'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:933:21 Unresolved reference 'onComponentMoved'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:933:39 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:936:17 Unresolved reference 'lastPinch'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:937:17 Unresolved reference 'parent'.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:940:16 No supertypes are accessible in this context.
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:942:1 Syntax error: Expecting a top level declaration.
+
+> Task :app:mergeExtDexDebug
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795170889556.json
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:287)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:130)
+	at org.gradle.internal.Factories$1.create(Factories.java:31)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:339)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:322)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLock(DefaultWorkerLeaseService.java:327)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:126)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:92)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForAll(DefaultAsyncWorkTracker.java:78)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForCompletion(DefaultAsyncWorkTracker.java:66)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:252)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+	at org.gradle.internal.Either$Right.fold(Either.java:175)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:105)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:54)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
+	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:119)
+	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:76)
+	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
+	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
+	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:195)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:128)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:170)
+	at org.gradle.internal.Factories$1.create(Factories.java:31)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:136)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:165)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:134)
+	... 2 more
+
+
+BUILD FAILED in 1m
+22 actionable tasks: 22 executed
