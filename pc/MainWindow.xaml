@@ -1,7 +1,7 @@
 <Window x:Class="ConnectPC.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Connect — 3D Electronics Simulator  •  v2.8.1"
+        Title="Connect — 3D Electronics Simulator  •  v2.9"
         Width="1240" Height="780" MinWidth="980" MinHeight="620"
         WindowStartupLocation="CenterScreen"
         Background="#10161c" Foreground="#dbeafe"
@@ -91,7 +91,7 @@
             <DockPanel Margin="8,6">
                 <StackPanel DockPanel.Dock="Left" Orientation="Vertical" VerticalAlignment="Center">
                     <TextBlock Text="CONNECT" FontSize="22" FontWeight="Bold" Foreground="#4fc3f7"/>
-                    <TextBlock Text="3D Electronics Simulator — v2.8.1 (нативная Windows-сборка)" FontSize="9.5" Foreground="#94a3b8"/>
+                    <TextBlock Text="3D Electronics Simulator — v2.9 (нативная Windows-сборка)" FontSize="9.5" Foreground="#94a3b8"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Button x:Name="TutorialBtn" Content="🎓 Туториал" Click="TutorialBtn_Click"/>

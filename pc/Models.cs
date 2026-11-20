@@ -94,21 +94,55 @@ public sealed class PlacedComponent
     public string Type { get; set; } = "led";
     public int X { get; set; }
     public int Y { get; set; }
+    /// <summary>Поворот вокруг вертикальной оси Z (yaw), градусы, любой угол.</summary>
     public int Rot { get; set; }
+    /// <summary>Высота детали над платой в клетках (ось Z, движение вверх/вниз).</summary>
+    public double Z { get; set; }
+    /// <summary>Наклон вокруг оси X, градусы.</summary>
+    public double RotX { get; set; }
+    /// <summary>Наклон вокруг оси Y, градусы.</summary>
+    public double RotY { get; set; }
     public Dictionary<string, string> Props { get; set; } = new();
     public CompDef Def => Catalog.ById(Type);
-    public (int, int) EffSize => ((Rot % 180 == 90) ? (Def.H, Def.W) : (Def.W, Def.H));
-    public (int, int) PinPos(PinDef p)
+
+    /// <summary>Габариты проекции детали на плату при текущем повороте вокруг Z.</summary>
+    public (double W, double H) Footprint
     {
-        var (w, h) = (Def.W, Def.H);
-        return (Rot % 360) switch
+        get
         {
-            90 => (h - 1 - p.Dy, p.Dx),
-            180 => (w - 1 - p.Dx, h - 1 - p.Dy),
-            270 => (p.Dy, w - 1 - p.Dx),
-            _ => (p.Dx, p.Dy)
-        };
+            double a = Rot * Math.PI / 180.0;
+            double co = Math.Abs(Math.Cos(a)), si = Math.Abs(Math.Sin(a));
+            return (Def.W * co + Def.H * si, Def.W * si + Def.H * co);
+        }
     }
+    public (int, int) EffSize => (Math.Max(1, (int)Math.Ceiling(Footprint.W - 1e-6)),
+                                  Math.Max(1, (int)Math.Ceiling(Footprint.H - 1e-6)));
+
+    /// <summary>
+    /// Полное 3D-преобразование локальной точки детали в мировые координаты платы:
+    /// наклон X -> наклон Y -> поворот Z -> перенос (X, Y, Z). Вращение — вокруг
+    /// центра объёма детали, поэтому деталь не проваливается под плату при наклоне.
+    /// </summary>
+    public (double X, double Y, double Z) Transform(double lx, double ly, double lz)
+    {
+        double zt = Def.HeightMm / 2.54;
+        double px = lx - Def.W / 2.0, py = ly - Def.H / 2.0, pz = lz - zt / 2.0;
+        double ax = RotX * Math.PI / 180.0, ay = RotY * Math.PI / 180.0, az = Rot * Math.PI / 180.0;
+        (py, pz) = (py * Math.Cos(ax) - pz * Math.Sin(ax), py * Math.Sin(ax) + pz * Math.Cos(ax));
+        (px, pz) = (px * Math.Cos(ay) + pz * Math.Sin(ay), -px * Math.Sin(ay) + pz * Math.Cos(ay));
+        (px, py) = (px * Math.Cos(az) - py * Math.Sin(az), px * Math.Sin(az) + py * Math.Cos(az));
+        var (fw, fh) = Footprint;
+        return (X + fw / 2.0 + px, Y + fh / 2.0 + py, Z + zt / 2.0 + pz);
+    }
+
+    /// <summary>Мировые координаты контакта на плате (XY).</summary>
+    public (double, double) PinPos(PinDef p)
+    {
+        var t = Transform(p.Dx + 0.5, p.Dy + 0.5, 0);
+        return (t.X, t.Y);
+    }
+    /// <summary>Мировые координаты контакта в 3D (с высотой).</summary>
+    public (double, double, double) PinPos3(PinDef p) => Transform(p.Dx + 0.5, p.Dy + 0.5, 0);
     public string Prop(string k, string def = "") => Props.TryGetValue(k, out var v) ? v : def;
 }
 
@@ -181,6 +215,15 @@ public sealed class ProjectData
     public double CaseHeight { get; set; } = 4.6;
     /// <summary>Макетная плата необязательна: можно строить схему прямо в пространстве.</summary>
     public bool ShowBoard { get; set; } = true;
+    /// <summary>Импортированный STL-корпус: путь к файлу (модель не копируется в проект).</summary>
+    public string CaseStlPath { get; set; } = "";
+    public string CaseStlName { get; set; } = "";
+    /// <summary>Масштаб STL-модели (1 = как есть, единицы файла — миллиметры).</summary>
+    public double CaseStlScale { get; set; } = 1.0;
+    /// <summary>Сдвиги STL-корпуса в клетках платы.</summary>
+    public double CaseStlX { get; set; }
+    public double CaseStlY { get; set; }
+    public double CaseStlZ { get; set; }
     public string Code { get; set; } = FirmwareExamples.All[0].Code;
     // runtime (не сериализуются целиком, но Json не повредит)
     public Dictionary<string, int> PinOutputs { get; set; } = new();
@@ -301,6 +344,8 @@ public sealed class ProjectData
         {
             Components = Components, Wires = Wires, FreeWires = FreeWires, Measurements = Measurements,
             Code = Code, CaseType = CaseType, CaseMargin = CaseMargin, CaseHeight = CaseHeight, ShowBoard = ShowBoard,
+            CaseStlPath = CaseStlPath, CaseStlName = CaseStlName, CaseStlScale = CaseStlScale,
+            CaseStlX = CaseStlX, CaseStlY = CaseStlY, CaseStlZ = CaseStlZ,
             Cols = Cols, Rows = Rows
         };
         File.WriteAllText(path, JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));
@@ -310,6 +355,9 @@ public sealed class ProjectData
         var p = JsonSerializer.Deserialize<ProjectData>(File.ReadAllText(path)) ?? CreateDemo();
         p.FreeWires ??= new();
         p.CaseType ??= "None";
+        p.CaseStlPath ??= "";
+        p.CaseStlName ??= "";
+        if (p.CaseStlScale <= 0) p.CaseStlScale = 1.0;
         p.PinOutputs = new(); p.PinModes = new(); p.Pressed = new();
         return p;
     }
@@ -347,11 +395,7 @@ public static class Circuit
 
     private static string Node(PlacedComponent c, string pin) => c.Id + "|" + pin;
 
-    private static (double, double) PinCenter(PlacedComponent c, PinDef pin)
-    {
-        var (px, py) = c.PinPos(pin);
-        return (c.X + px + 0.5, c.Y + py + 0.5);
-    }
+    private static (double, double) PinCenter(PlacedComponent c, PinDef pin) => c.PinPos(pin);
 
     private static double PointSegmentDistance(double px, double py, double ax, double ay, double bx, double by)
     {

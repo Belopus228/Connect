@@ -37,7 +37,7 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tutorial");
-        Log("✅ Connect v2.8.1 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.9 — нативная Windows-сборка открыта");
         Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();
@@ -59,6 +59,18 @@ public partial class MainWindow : Window
             case Key.D7: SetMode("Delete"); break;
             case Key.R:
                 if (_board.Selected != null) { _board.RotateComponent(_board.Selected); RefreshState(); }
+                break;
+            case Key.Q:
+                if (_board.Selected != null) { _board.RotateComponentZ(_board.Selected, -15); RefreshState(); }
+                break;
+            case Key.E:
+                if (_board.Selected != null) { _board.RotateComponentZ(_board.Selected, 15); RefreshState(); }
+                break;
+            case Key.PageUp:
+                if (_board.Selected != null) { _board.Selected.Z = Math.Clamp(_board.Selected.Z + 0.5, 0, 12); _board.InvalidateVisual(); RefreshState(); }
+                break;
+            case Key.PageDown:
+                if (_board.Selected != null) { _board.Selected.Z = Math.Clamp(_board.Selected.Z - 0.5, 0, 12); _board.InvalidateVisual(); RefreshState(); }
                 break;
             case Key.Delete:
                 if (_board.Selected != null)
@@ -286,13 +298,102 @@ public partial class MainWindow : Window
         SideContent.Children.Add(caseHeightLabel);
         SideContent.Children.Add(caseHeightSlider);
 
+        SideContent.Children.Add(SectionTitle("STL-КОРПУС (ИМПОРТ МОДЕЛИ)"));
+        var stlStatus = new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(_board.Data.CaseStlPath)
+                ? "STL-модель не импортирована. Поддерживаются бинарные и ASCII .stl, единицы — миллиметры."
+                : $"Модель: {_board.Data.CaseStlName}\n{_board.Data.CaseStlPath}",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184))
+        };
+        SideContent.Children.Add(stlStatus);
+        var importStlBtn = new Button { Content = "📥 Импорт STL-корпуса…" };
+        importStlBtn.Click += (_, _) =>
+        {
+            var dlg = new OpenFileDialog { Filter = "STL модель (*.stl)|*.stl|Все файлы (*.*)|*.*" };
+            if (dlg.ShowDialog() != true) return;
+            try
+            {
+                var mesh = StlMesh.Load(dlg.FileName);
+                _board.Data.CaseStlPath = dlg.FileName;
+                _board.Data.CaseStlName = Path.GetFileName(dlg.FileName);
+                _board.Data.CaseType = "None";
+                Log($"🧰 STL-корпус импортирован: {_board.Data.CaseStlName} — {mesh.Triangles.Count} треугольников, " +
+                    $"{mesh.SizeX:F0}×{mesh.SizeY:F0}×{mesh.SizeZ:F0} мм. Модель по центру платы; масштаб и сдвиги — ползунками ниже.");
+                RefreshState();
+                ShowPanel("tools");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Не удалось прочитать STL: " + ex.Message, "Импорт STL");
+            }
+        };
+        SideContent.Children.Add(importStlBtn);
+        var removeStlBtn = new Button { Content = "Убрать STL-корпус" };
+        removeStlBtn.Click += (_, _) =>
+        {
+            _board.Data.CaseStlPath = "";
+            _board.Data.CaseStlName = "";
+            Log("STL-корпус убран");
+            RefreshState();
+            ShowPanel("tools");
+        };
+        SideContent.Children.Add(removeStlBtn);
+        var stlScaleLabel = new TextBlock { Text = $"Масштаб STL: ×{_board.Data.CaseStlScale:F1}" };
+        var stlScaleSlider = new Slider { Minimum = 0.2, Maximum = 3, Value = Math.Clamp(_board.Data.CaseStlScale, 0.2, 3), TickFrequency = 0.1 };
+        stlScaleSlider.ValueChanged += (_, ev) =>
+        {
+            _board.Data.CaseStlScale = ev.NewValue;
+            stlScaleLabel.Text = $"Масштаб STL: ×{ev.NewValue:F1}";
+            _board.InvalidateVisual();
+        };
+        SideContent.Children.Add(stlScaleLabel);
+        SideContent.Children.Add(stlScaleSlider);
+        var stlXLabel = new TextBlock { Text = $"Сдвиг STL по X: {_board.Data.CaseStlX:F1} кл." };
+        var stlXSlider = new Slider { Minimum = -15, Maximum = 15, Value = _board.Data.CaseStlX, TickFrequency = 0.5 };
+        stlXSlider.ValueChanged += (_, ev) =>
+        {
+            _board.Data.CaseStlX = ev.NewValue;
+            stlXLabel.Text = $"Сдвиг STL по X: {ev.NewValue:F1} кл.";
+            _board.InvalidateVisual();
+        };
+        SideContent.Children.Add(stlXLabel);
+        SideContent.Children.Add(stlXSlider);
+        var stlYLabel = new TextBlock { Text = $"Сдвиг STL по Y: {_board.Data.CaseStlY:F1} кл." };
+        var stlYSlider = new Slider { Minimum = -15, Maximum = 15, Value = _board.Data.CaseStlY, TickFrequency = 0.5 };
+        stlYSlider.ValueChanged += (_, ev) =>
+        {
+            _board.Data.CaseStlY = ev.NewValue;
+            stlYLabel.Text = $"Сдвиг STL по Y: {ev.NewValue:F1} кл.";
+            _board.InvalidateVisual();
+        };
+        SideContent.Children.Add(stlYLabel);
+        SideContent.Children.Add(stlYSlider);
+        var stlZLabel = new TextBlock { Text = $"Сдвиг STL по Z (высота): {_board.Data.CaseStlZ:F1} кл." };
+        var stlZSlider = new Slider { Minimum = -3, Maximum = 12, Value = _board.Data.CaseStlZ, TickFrequency = 0.5 };
+        stlZSlider.ValueChanged += (_, ev) =>
+        {
+            _board.Data.CaseStlZ = ev.NewValue;
+            stlZLabel.Text = $"Сдвиг STL по Z (высота): {ev.NewValue:F1} кл.";
+            _board.InvalidateVisual();
+        };
+        SideContent.Children.Add(stlZLabel);
+        SideContent.Children.Add(stlZSlider);
+        SideContent.Children.Add(new TextBlock
+        {
+            Text = "Проект хранит путь к STL-файлу, а не саму модель: не перемещайте файл после импорта.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184))
+        });
+
         SideContent.Children.Add(SectionTitle("ВЫБРАННАЯ ДЕТАЛЬ"));
         var sel = _board.Selected;
         if (sel == null)
         {
             SideContent.Children.Add(new TextBlock
             {
-                Text = "Ничего не выбрано. В режиме «Деталь» кликните компонент:\nпоявятся стрелки X/Y как в Blender и ручка поворота ⟳.",
+                Text = "Ничего не выбрано. В режиме «Деталь» кликните компонент:\nпоявятся стрелки X (красная), Y (зелёная), Z (синяя, вверх) и ручки поворотов ⟳/X/Y по всем осям.",
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184))
             });
@@ -301,7 +402,7 @@ public partial class MainWindow : Window
         {
             SideContent.Children.Add(new TextBlock
             {
-                Text = $"{sel.Def.Title} @({sel.X},{sel.Y}), поворот {sel.Rot}°",
+                Text = $"{sel.Def.Title} @({sel.X},{sel.Y}) высота Z {sel.Z:F1}\nповорот Z {sel.Rot}°, наклон X {sel.RotX:F0}° / Y {sel.RotY:F0}°",
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 4)
             });
@@ -322,6 +423,79 @@ public partial class MainWindow : Window
             selRow.Children.Add(rotBtn);
             selRow.Children.Add(delBtn);
             SideContent.Children.Add(selRow);
+
+            // ---- движение и вращение по ВСЕМ осям ----
+            SideContent.Children.Add(new TextBlock
+            {
+                Text = "Оси: стрелки гизмо X/Y/Z на плате, Shift+тащить — высота,\nQ/E — поворот Z, PgUp/PgDn — высота. Точно — ползунками:",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184))
+            });
+            var zLabel = new TextBlock { Text = $"Высота Z над платой: {sel.Z:F1} кл." };
+            var zSlider = new Slider { Minimum = 0, Maximum = 12, Value = sel.Z, TickFrequency = 0.5 };
+            zSlider.ValueChanged += (_, ev) =>
+            {
+                if (_board.Selected == null) return;
+                _board.Selected.Z = ev.NewValue;
+                zLabel.Text = $"Высота Z над платой: {ev.NewValue:F1} кл.";
+                _board.InvalidateVisual();
+            };
+            SideContent.Children.Add(zLabel);
+            SideContent.Children.Add(zSlider);
+            double yawShown = sel.Rot > 180 ? sel.Rot - 360 : sel.Rot;
+            var yawLabel = new TextBlock { Text = $"Поворот вокруг Z: {sel.Rot}°" };
+            var yawSlider = new Slider { Minimum = -180, Maximum = 180, Value = yawShown, TickFrequency = 15 };
+            yawSlider.ValueChanged += (_, ev) =>
+            {
+                if (_board.Selected == null) return;
+                _board.Selected.Rot = ((int)Math.Round(ev.NewValue) % 360 + 360) % 360;
+                _board.ClampComponentPos(_board.Selected);
+                yawLabel.Text = $"Поворот вокруг Z: {_board.Selected.Rot}°";
+                _board.InvalidateVisual();
+            };
+            SideContent.Children.Add(yawLabel);
+            SideContent.Children.Add(yawSlider);
+            var tiltXLabel = new TextBlock { Text = $"Наклон вокруг X: {sel.RotX:F0}°" };
+            var tiltXSlider = new Slider { Minimum = -180, Maximum = 180, Value = sel.RotX, TickFrequency = 5 };
+            tiltXSlider.ValueChanged += (_, ev) =>
+            {
+                if (_board.Selected == null) return;
+                _board.Selected.RotX = ev.NewValue;
+                tiltXLabel.Text = $"Наклон вокруг X: {ev.NewValue:F0}°";
+                _board.InvalidateVisual();
+            };
+            SideContent.Children.Add(tiltXLabel);
+            SideContent.Children.Add(tiltXSlider);
+            var tiltYLabel = new TextBlock { Text = $"Наклон вокруг Y: {sel.RotY:F0}°" };
+            var tiltYSlider = new Slider { Minimum = -180, Maximum = 180, Value = sel.RotY, TickFrequency = 5 };
+            tiltYSlider.ValueChanged += (_, ev) =>
+            {
+                if (_board.Selected == null) return;
+                _board.Selected.RotY = ev.NewValue;
+                tiltYLabel.Text = $"Наклон вокруг Y: {ev.NewValue:F0}°";
+                _board.InvalidateVisual();
+            };
+            SideContent.Children.Add(tiltYLabel);
+            SideContent.Children.Add(tiltYSlider);
+            var poseRow = new StackPanel { Orientation = Orientation.Horizontal };
+            var tiltXBtn = new Button { Content = "Наклон X +45°" };
+            tiltXBtn.Click += (_, _) => { if (_board.Selected != null) { _board.TiltComponent(_board.Selected, "X"); ShowPanel("tools"); } };
+            var tiltYBtn = new Button { Content = "Наклон Y +45°" };
+            tiltYBtn.Click += (_, _) => { if (_board.Selected != null) { _board.TiltComponent(_board.Selected, "Y"); ShowPanel("tools"); } };
+            var resetPoseBtn = new Button { Content = "Сброс высоты/наклонов" };
+            resetPoseBtn.Click += (_, _) =>
+            {
+                var c = _board.Selected;
+                if (c == null) return;
+                c.Z = 0; c.RotX = 0; c.RotY = 0;
+                Log($"↺ {c.Def.Title}: высота и наклоны сброшены");
+                RefreshState();
+                ShowPanel("tools");
+            };
+            poseRow.Children.Add(tiltXBtn);
+            poseRow.Children.Add(tiltYBtn);
+            poseRow.Children.Add(resetPoseBtn);
+            SideContent.Children.Add(poseRow);
             if (sel.Type == "resistor")
             {
                 var ohmsBox = new ComboBox { Width = 150, HorizontalAlignment = HorizontalAlignment.Left };
@@ -365,7 +539,7 @@ public partial class MainWindow : Window
         SideContent.Children.Add(thickSlider);
         SideContent.Children.Add(new TextBlock
         {
-            Text = "В режиме провода колесо мыши — высота звена над платой.\nГорячие клавиши: 1–7 режимы, R — повернуть деталь, Del — удалить, F — вписать плату.",
+            Text = "В режиме провода колесо мыши — высота звена над платой.\nГорячие клавиши: 1–7 режимы, R — повернуть деталь, Q/E — поворот Z ±15°, PgUp/PgDn — высота детали, Del — удалить, F — вписать плату.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184))
         });
@@ -439,7 +613,7 @@ public partial class MainWindow : Window
          "Зажмите левую кнопку и ведите мышь: плата поворачивается за рукой — вправо, влево, вверх и вниз. То же вращение — зажатым колёсиком мыши в любом режиме.",
          "Повращайте плату левой и средней кнопкой. Колесо без зажатия — масштаб.", "Camera"),
         ("Детали на плату",
-         "Кнопка «＋ Добавить» сверху: деталь перетаскивается мышкой на плату. Режим «↔ Деталь» (слева) двигает детали по плате, «✋ Плата» — саму плату.",
+         "Кнопка «＋ Добавить» сверху: деталь перетаскивается мышкой на плату. Режим «↔ Деталь» (слева): стрелки X/Y/Z двигают деталь по всем осям (Z — вверх), ручки ⟳/X/Y крутят вокруг всех осей, Shift+тащить — высота, точные углы — ползунками в Инструментах.",
          "Добавьте светодиод и резистор и подвиньте их режимом «Деталь».", "Move"),
         ("Провода по звеньям",
          "ЛКМ ставит звено, колесо мыши меняет ВЫСОТУ звена над платой (как близко оно к камере), ПКМ завершает провод. Узлы готовых проводов можно перетаскивать мышкой.",
@@ -448,8 +622,8 @@ public partial class MainWindow : Window
          "Отдельной пайки нет: подведите конец провода к контакту детали — он сам прилипнет (голубое кольцо «контакт!») и соединится. Все контакты подписаны на плате, у ESP32 их 30. Толщина проводов — ползунком в Инструментах.",
          "Соедините «+» батареи с VIN, а «−» — с GND на ESP32.", "Wire"),
         ("Корпус, низ платы, замер",
-         "«Инструменты → Корпус платы»: акрил с прозрачной крышкой, чёрный ABS или металл. «Смотреть НИЗ» — обратная сторона. Режим «Замер»: два клика — расстояние в миллиметрах.",
-         "Добавьте акриловый корпус и замерьте диагональ платы.", "Measure"),
+         "«Инструменты → Корпус платы»: акрил с прозрачной крышкой, чёрный ABS или металл. Там же «STL-корпус»: кнопка импорта .stl, масштаб и сдвиги ползунками (проект хранит путь к файлу). «Смотреть НИЗ» — обратная сторона. Режим «Замер»: два клика — расстояние в миллиметрах.",
+         "Добавьте акриловый корпус или импортируйте свой STL и замерьте диагональ платы.", "Measure"),
         ("Прошивка и запуск",
          "«⌨ Прошивка» сверху: примеры кода или свой, кнопка «▶ Запуск». Панель ESP показывает живые HIGH/LOW, в режиме «Симуляция» кликаются кнопка и потенциометр на плате. Проект — «💾 Проект».",
          "Запустите демо-прошивку и посмотрите, как мигает D13.", "Sim"),
@@ -772,7 +946,7 @@ public partial class MainWindow : Window
         SideContent.Children.Add(SectionTitle("СТАТИСТИКА"));
         var stats = new TextBlock
         {
-            Text = $"Деталей: {_board.Data.Components.Count}\nСоединений: {_board.Data.Wires.Count + _board.Data.FreeWires.Count} (свободных линий: {_board.Data.FreeWires.Count})\nЗамеров: {_board.Data.Measurements.Count}\nКорпус: {_board.Data.CaseType}",
+            Text = $"Деталей: {_board.Data.Components.Count}\nСоединений: {_board.Data.Wires.Count + _board.Data.FreeWires.Count} (свободных линий: {_board.Data.FreeWires.Count})\nЗамеров: {_board.Data.Measurements.Count}\nКорпус: {_board.Data.CaseType}\nSTL-корпус: {(string.IsNullOrWhiteSpace(_board.Data.CaseStlName) ? "нет" : _board.Data.CaseStlName)}",
             TextWrapping = TextWrapping.Wrap
         };
         SideContent.Children.Add(stats);
@@ -828,12 +1002,12 @@ public partial class MainWindow : Window
                           $"провода кладу на: {_board.WireSide} • повёрнута на {_board.BoardRotDeg}°";
         SelectionStatus.Text = _board.Selected == null
             ? "Ничего не выбрано"
-            : $"Выбрано: {_board.Selected.Def.Title} @({_board.Selected.X},{_board.Selected.Y})";
+            : $"Выбрано: {_board.Selected.Def.Title} @({_board.Selected.X},{_board.Selected.Y}) Z={_board.Selected.Z:F1} ⟳Z={_board.Selected.Rot}° X={_board.Selected.RotX:F0}° Y={_board.Selected.RotY:F0}°";
         Hint.Text = _board.Mode switch
         {
             "Camera" => "Камера: тащите левой кнопкой • колесо — масштаб",
             "MoveBoard" => "Перемещение платы: тащите левой кнопкой",
-            "Move" => "Перемещение детали: перетащите её мышкой",
+            "Move" => "Деталь по всем осям: тащить — X/Y • Shift+тащить — высота Z • стрелки X/Y/Z • ручки ⟳/X/Y — повороты • Q/E, PgUp/PgDn",
             "Wire" => $"Провод: ЛКМ — звено (у контакта прилипнет) • колесо — высота звена ({_board.LinkHeightCells:F1} кл.) • ПКМ — завершить • узлы таскаются",
             "Solder" => "Пайка убрана: просто ведите провода к контактам",
             "Sim" => "Симуляция: клик по кнопке/потенциометру на плате",

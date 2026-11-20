@@ -39,6 +39,8 @@ public sealed class BoardView : FrameworkElement
     private string _gizmoAxis;
     private (double, double) _gizmoStart;
     private (int, int) _gizmoOrig;
+    private Point _gizmoStartMouse;
+    private double _gizmoStartZ;
     private PlacedComponent _heldButton;
     private PlacedComponent _potDrag;
     private Point _potStartMouse;
@@ -178,23 +180,11 @@ public sealed class BoardView : FrameworkElement
 
     private Point ProjectLocal(PlacedComponent c, double lx, double ly, double wz = 0)
     {
-        var d = c.Def;
-        double rx, ry;
-        switch (((c.Rot % 360) + 360) % 360)
-        {
-            case 90: rx = d.H - ly; ry = lx; break;
-            case 180: rx = d.W - lx; ry = d.H - ly; break;
-            case 270: rx = ly; ry = d.W - lx; break;
-            default: rx = lx; ry = ly; break;
-        }
-        return Project(c.X + rx, c.Y + ry, wz);
+        var t = c.Transform(lx, ly, wz);
+        return Project(t.X, t.Y, t.Z);
     }
 
-    private (double, double) PinWorld(PlacedComponent c, PinDef pin)
-    {
-        var (px, py) = c.PinPos(pin);
-        return (c.X + px + 0.5, c.Y + py + 0.5);
-    }
+    private (double, double) PinWorld(PlacedComponent c, PinDef pin) => c.PinPos(pin);
 
     private static double PinZ(PlacedComponent c) => c.Type switch
     {
@@ -348,6 +338,7 @@ public sealed class BoardView : FrameworkElement
             Text(dc, snapped ? "контакт!" : $"высота звена {LinkHeightCells:F1} кл.", new Point(ep.X, ep.Y - 13), 8, snapped ? "#22d3ee" : "#facc15", bold: true);
         }
         DrawCaseFront(dc);
+        DrawStlCase(dc);
         DrawContactLabels(dc, bottom);
         // подписи: маленькие, только выбранное и экраны
         DrawLabels(dc, state, bottom);
@@ -454,19 +445,8 @@ public sealed class BoardView : FrameworkElement
         }
     }
 
-    private (double, double) LocalToWorld(PlacedComponent c, double lx, double ly)
-    {
-        var d = c.Def;
-        double rx, ry;
-        switch (((c.Rot % 360) + 360) % 360)
-        {
-            case 90: rx = d.H - ly; ry = lx; break;
-            case 180: rx = d.W - lx; ry = d.H - ly; break;
-            case 270: rx = ly; ry = d.W - lx; break;
-            default: rx = lx; ry = ly; break;
-        }
-        return (c.X + rx, c.Y + ry);
-    }
+    private (double, double, double) LocalToWorld(PlacedComponent c, double lx, double ly, double lz = 0) =>
+        c.Transform(lx, ly, lz);
 
     private void DrawSpaceGrid(DrawingContext dc)
     {
@@ -487,8 +467,8 @@ public sealed class BoardView : FrameworkElement
             var (ew, eh) = c.EffSize;
             var poly = new[]
             {
-                Project(c.X - 0.30, c.Y - 0.30, 0.28), Project(c.X + ew + 0.30, c.Y - 0.30, 0.28),
-                Project(c.X + ew + 0.30, c.Y + eh + 0.30, 0.28), Project(c.X - 0.30, c.Y + eh + 0.30, 0.28)
+                Project(c.X - 0.30, c.Y - 0.30, 0.28 + c.Z), Project(c.X + ew + 0.30, c.Y - 0.30, 0.28 + c.Z),
+                Project(c.X + ew + 0.30, c.Y + eh + 0.30, 0.28 + c.Z), Project(c.X - 0.30, c.Y + eh + 0.30, 0.28 + c.Z)
             };
             Poly(dc, poly, Brush("#7dd3fc", 18), PenOf("#7dd3fc", 1.5));
         }
@@ -536,7 +516,8 @@ public sealed class BoardView : FrameworkElement
                 double dx = px - cx, dy = py - cy;
                 double len = Math.Sqrt(dx * dx + dy * dy);
                 if (len < 0.01) { dx = 0; dy = -1; len = 1; }
-                var sp = Project(px + dx / len * 0.70, py + dy / len * 0.70, 0.10);
+                var p3 = c.PinPos3(pin);
+                var sp = Project(px + dx / len * 0.70, py + dy / len * 0.70, p3.Z + 0.10);
                 Text(dc, pin.Name, sp, Zoom < 0.85 ? 5.2 : 6.0, bottom ? "#e8d9b0" : "#d9ead3");
             }
         }
@@ -550,8 +531,8 @@ public sealed class BoardView : FrameworkElement
             if (face.P.Length < 3) continue;
             var wv = face.P.Select(v =>
             {
-                var (wx, wy) = LocalToWorld(c, v.X, v.Y);
-                return (wx, wy, v.Z);
+                var t = LocalToWorld(c, v.X, v.Y, v.Z);
+                return (wx: t.X, wy: t.Y, Z: t.Z);
             }).ToArray();
             var proj = wv.Select(v => ProjectD(v.wx, v.wy, v.Z)).ToArray();
             double depth = proj.Average(q => q.Depth);
@@ -732,8 +713,8 @@ public sealed class BoardView : FrameworkElement
         var (ew, eh) = c.EffSize;
         var poly = new[]
         {
-            Project(c.X, c.Y, 0.1), Project(c.X + ew, c.Y, 0.1),
-            Project(c.X + ew, c.Y + eh, 0.1), Project(c.X, c.Y + eh, 0.1)
+            Project(c.X, c.Y, 0.1 + c.Z), Project(c.X + ew, c.Y, 0.1 + c.Z),
+            Project(c.X + ew, c.Y + eh, 0.1 + c.Z), Project(c.X, c.Y + eh, 0.1 + c.Z)
         };
         Poly(dc, poly, Brush("#90a4ae", 45), PenOf("#cfd8dc", 1, 120));
     }
@@ -828,6 +809,52 @@ public sealed class BoardView : FrameworkElement
             var lid = new[] { Project(x0, y0, hz), Project(x1, y0, hz), Project(x1, y1, hz), Project(x0, y1, hz) };
             Poly(dc, lid, Brush("#e0f2fe", 26), PenOf("#bae6fd", 1.2, 110));
         }
+    }
+
+    // ---------------- импортированный STL-корпус ----------------
+    private StlMesh _stlMesh;
+    private string _stlPathLoaded;
+
+    private StlMesh GetStlMesh()
+    {
+        if (string.IsNullOrWhiteSpace(Data.CaseStlPath)) { _stlMesh = null; _stlPathLoaded = null; return null; }
+        if (_stlMesh != null && _stlPathLoaded == Data.CaseStlPath) return _stlMesh;
+        _stlPathLoaded = Data.CaseStlPath;
+        try { _stlMesh = StlMesh.Load(Data.CaseStlPath); }
+        catch { _stlMesh = null; }
+        return _stlMesh;
+    }
+
+    private void DrawStlCase(DrawingContext dc)
+    {
+        var mesh = GetStlMesh();
+        if (mesh == null || mesh.Triangles.Count == 0) return;
+        double k = Math.Max(0.05, Data.CaseStlScale) / 2.54; // миллиметры файла -> клетки платы
+        double midX = (mesh.MinX + mesh.MaxX) / 2.0, midY = (mesh.MinY + mesh.MaxY) / 2.0;
+        double bcx = Data.Cols / 2.0 + Data.CaseStlX, bcy = Data.Rows / 2.0 + Data.CaseStlY;
+        (double, double, double) W(StlV v) =>
+            (bcx + (v.X - midX) * k, bcy + (v.Y - midY) * k, Data.CaseStlZ + (v.Z - mesh.MinZ) * k);
+        // очень плотные модели прореживаем, чтобы интерфейс не тормозил
+        int step = Math.Max(1, (int)Math.Ceiling(mesh.Triangles.Count / 60000.0));
+        var rendered = new List<(Point[] Pts, double Depth, double Shade)>();
+        for (int i = 0; i < mesh.Triangles.Count; i += step)
+        {
+            var t = mesh.Triangles[i];
+            var wv = new[] { W(t.A), W(t.B), W(t.C) };
+            var proj = wv.Select(v => ProjectD(v.Item1, v.Item2, v.Item3)).ToArray();
+            double depth = proj.Average(q => q.Depth);
+            var a = wv[0]; var b = wv[1]; var cc = wv[2];
+            double ux = b.Item1 - a.Item1, uy = b.Item2 - a.Item2, uz = b.Item3 - a.Item3;
+            double vx = cc.Item1 - a.Item1, vy = cc.Item2 - a.Item2, vz = cc.Item3 - a.Item3;
+            double nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            double nl = Math.Sqrt(nx * nx + ny * ny + nz * nz);
+            if (nl < 1e-9) { nx = 0; ny = 0; nz = 1; nl = 1; }
+            double dot = (nx * -0.45 + ny * -0.55 + nz * 0.75) / (nl * 1.03);
+            double shade = Math.Clamp(0.48 + 0.62 * Math.Max(0, dot), 0.30, 1.08);
+            rendered.Add((proj.Select(q => q.Pt).ToArray(), depth, shade));
+        }
+        foreach (var r in rendered.OrderBy(r => r.Depth))
+            Poly(dc, r.Pts, Shade("#8ea6bf", r.Shade, 215), PenOf("#0b1220", 0.5, 60));
     }
 
     // ---------------- свободные линии (без пинов и снапа) ----------------
@@ -1025,7 +1052,7 @@ public sealed class BoardView : FrameworkElement
             string txt = c.Prop("displayText");
             if (txt.Length == 0) continue;
             var (ew, eh) = c.EffSize;
-            var ctr = Project(c.X + ew / 2.0, c.Y + eh / 2.0, 1.0);
+            var ctr = Project(c.X + ew / 2.0, c.Y + eh / 2.0, 1.0 + c.Z);
             Text(dc, txt.Length > 18 ? txt[..18] + "…" : txt, ctr, 7.5, c.Type == "lcd1602" ? "#1b5e20" : "#80deea", bold: true);
         }
         // подпись только у выбранной детали (маленькая)
@@ -1033,15 +1060,15 @@ public sealed class BoardView : FrameworkElement
         {
             var c = Selected;
             var (ew, eh) = c.EffSize;
-            double z = c.Def.HeightMm / 2.54 + 0.8;
+            double z = c.Def.HeightMm / 2.54 + 0.8 + c.Z;
             var at = Project(c.X + ew / 2.0, c.Y + eh / 2.0, z);
             string label = c.Type == "resistor" ? $"R {c.Prop("ohms", "220")}Ω" : c.Def.Short;
             Text(dc, label, at, 7.5, "#e2e8f0");
             // рамка выбора лежит на плате у основания детали и чуть шире неё
             var poly = new[]
             {
-                Project(c.X - 0.35, c.Y - 0.35, 0.30), Project(c.X + ew + 0.35, c.Y - 0.35, 0.30),
-                Project(c.X + ew + 0.35, c.Y + eh + 0.35, 0.30), Project(c.X - 0.35, c.Y + eh + 0.35, 0.30)
+                Project(c.X - 0.35, c.Y - 0.35, 0.30 + c.Z), Project(c.X + ew + 0.35, c.Y - 0.35, 0.30 + c.Z),
+                Project(c.X + ew + 0.35, c.Y + eh + 0.35, 0.30 + c.Z), Project(c.X - 0.35, c.Y + eh + 0.35, 0.30 + c.Z)
             };
             Poly(dc, poly, null, PenOf("#facc15", 1.8));
         }
@@ -1159,14 +1186,35 @@ public sealed class BoardView : FrameworkElement
         _chain.Clear();
     }
 
-    public void RotateComponent(PlacedComponent c)
+    public void RotateComponent(PlacedComponent c) => RotateComponentZ(c, 90);
+
+    /// <summary>Не дать детали уехать за край платы и ограничить высоту.</summary>
+    public void ClampComponentPos(PlacedComponent c)
     {
-        if (c == null) return;
-        c.Rot = (c.Rot + 90) % 360;
         var (ew, eh) = c.EffSize;
         c.X = Math.Clamp(c.X, 0, Math.Max(0, Data.Cols - ew));
         c.Y = Math.Clamp(c.Y, 0, Math.Max(0, Data.Rows - eh));
-        LogMessage?.Invoke($"⟳ {c.Def.Title}: поворот {c.Rot}°");
+        c.Z = Math.Clamp(c.Z, 0, 12);
+    }
+
+    /// <summary>Поворот вокруг вертикальной оси Z на произвольный угол.</summary>
+    public void RotateComponentZ(PlacedComponent c, int deg)
+    {
+        if (c == null) return;
+        c.Rot = ((c.Rot + deg) % 360 + 360) % 360;
+        ClampComponentPos(c);
+        LogMessage?.Invoke($"⟳ {c.Def.Title}: поворот вокруг Z {c.Rot}°");
+        StateChanged?.Invoke();
+        InvalidateVisual();
+    }
+
+    /// <summary>Наклон детали вокруг оси X или Y на шаг (ручки гизмо).</summary>
+    public void TiltComponent(PlacedComponent c, string axis)
+    {
+        if (c == null) return;
+        if (axis == "X") c.RotX = ((c.RotX + 45) % 360 + 360) % 360;
+        else c.RotY = ((c.RotY + 45) % 360 + 360) % 360;
+        LogMessage?.Invoke($"⟳ {c.Def.Title}: наклон {axis} {(axis == "X" ? c.RotX : c.RotY):F0}°");
         StateChanged?.Invoke();
         InvalidateVisual();
     }
@@ -1180,7 +1228,15 @@ public sealed class BoardView : FrameworkElement
         InvalidateVisual();
     }
 
-    // ---- стрелки перемещения как в Blender: X — красная, Y — зелёная, ⟳ — поворот ----
+    /// <summary>Центр детали в мировых координатах (для гизмо).</summary>
+    private (Point Ctr, double Wx, double Wy, double Wz) GizmoCenter(PlacedComponent c)
+    {
+        double zt = c.Def.HeightMm / 2.54;
+        var t = c.Transform(c.Def.W / 2.0, c.Def.H / 2.0, zt / 2.0);
+        return (Project(t.X, t.Y, t.Z), t.X, t.Y, t.Z);
+    }
+
+    // ---- гизмо как в Blender: X красная, Y зелёная, Z синяя; ручки ⟳/X/Y — повороты по осям ----
     private void DrawArrow(DrawingContext dc, Point a, Point b, string col)
     {
         var pen = PenOf(col, 3.2);
@@ -1198,28 +1254,35 @@ public sealed class BoardView : FrameworkElement
     {
         if (Selected == null || Mode != "Move") return;
         var c = Selected;
-        var (ew, eh) = c.EffSize;
-        double cx = c.X + ew / 2.0, cy = c.Y + eh / 2.0;
-        var ctr = Project(cx, cy, 1.1);
-        DrawArrow(dc, ctr, Project(cx + 3.4, cy, 1.1), "#ef4444"); // +X
-        DrawArrow(dc, ctr, Project(cx, cy + 3.4, 1.1), "#22c55e"); // +Y
+        var (ctr, wx, wy, wz) = GizmoCenter(c);
+        DrawArrow(dc, ctr, Project(wx + 3.4, wy, wz), "#ef4444"); // +X красная
+        DrawArrow(dc, ctr, Project(wx, wy + 3.4, wz), "#22c55e"); // +Y зелёная
+        DrawArrow(dc, ctr, Project(wx, wy, wz + 3.4), "#3b82f6"); // +Z синяя (вверх)
         dc.DrawEllipse(Brush("#f8fafc"), PenOf("#111827", 1.2), ctr, 5, 5);
-        var rp = Project(cx, cy, c.Def.HeightMm / 2.54 + 2.1);
+        Text(dc, "Z", Project(wx, wy, wz + 3.95), 8, "#93c5fd", bold: true);
+        var rp = Project(wx, wy, wz + 2.3);
         dc.DrawEllipse(Brush("#f59e0b", 220), PenOf("#111827", 1.2), rp, 9.5, 9.5);
         Text(dc, "⟳", rp, 10, "#111827", bold: true);
+        var rxp = new Point(ctr.X - 42, ctr.Y - 30);
+        dc.DrawEllipse(Brush("#f472b6", 220), PenOf("#111827", 1.2), rxp, 9.5, 9.5);
+        Text(dc, "X", rxp, 8, "#111827", bold: true);
+        var ryp = new Point(ctr.X + 42, ctr.Y - 30);
+        dc.DrawEllipse(Brush("#22d3ee", 220), PenOf("#111827", 1.2), ryp, 9.5, 9.5);
+        Text(dc, "Y", ryp, 8, "#111827", bold: true);
     }
 
     private string HitGizmo(Point s)
     {
         if (Selected == null) return null;
         var c = Selected;
-        var (ew, eh) = c.EffSize;
-        double cx = c.X + ew / 2.0, cy = c.Y + eh / 2.0;
-        var rp = Project(cx, cy, c.Def.HeightMm / 2.54 + 2.1);
-        if (Math.Sqrt((s.X - rp.X) * (s.X - rp.X) + (s.Y - rp.Y) * (s.Y - rp.Y)) < 12) return "ROT";
-        var ctr = Project(cx, cy, 1.1);
-        if (PointSegmentDistance(s, ctr, Project(cx + 3.4, cy, 1.1)) < 9) return "X";
-        if (PointSegmentDistance(s, ctr, Project(cx, cy + 3.4, 1.1)) < 9) return "Y";
+        var (ctr, wx, wy, wz) = GizmoCenter(c);
+        double DistP(Point q) => Math.Sqrt((s.X - q.X) * (s.X - q.X) + (s.Y - q.Y) * (s.Y - q.Y));
+        if (DistP(Project(wx, wy, wz + 2.3)) < 13) return "ROT";
+        if (DistP(new Point(ctr.X - 42, ctr.Y - 30)) < 13) return "ROTX";
+        if (DistP(new Point(ctr.X + 42, ctr.Y - 30)) < 13) return "ROTY";
+        if (PointSegmentDistance(s, ctr, Project(wx + 3.4, wy, wz)) < 9) return "X";
+        if (PointSegmentDistance(s, ctr, Project(wx, wy + 3.4, wz)) < 9) return "Y";
+        if (PointSegmentDistance(s, ctr, Project(wx, wy, wz + 3.4)) < 9) return "Z";
         return null;
     }
 
@@ -1262,13 +1325,18 @@ public sealed class BoardView : FrameworkElement
         foreach (var c in Data.Components.AsEnumerable().Reverse())
         {
             var (ew, eh) = c.EffSize;
-            double z = c.Def.HeightMm / 2.54;
+            double z = c.Def.HeightMm / 2.54 + c.Z;
             var poly = new[]
             {
                 Project(c.X, c.Y, z), Project(c.X + ew, c.Y, z),
                 Project(c.X + ew, c.Y + eh, z), Project(c.X, c.Y + eh, z)
             };
-            if (PointInPoly(s, poly)) return c;
+            var basePoly = new[]
+            {
+                Project(c.X, c.Y, c.Z + 0.05), Project(c.X + ew, c.Y, c.Z + 0.05),
+                Project(c.X + ew, c.Y + eh, c.Z + 0.05), Project(c.X, c.Y + eh, c.Z + 0.05)
+            };
+            if (PointInPoly(s, poly) || PointInPoly(s, basePoly)) return c;
         }
         return null;
     }
@@ -1379,11 +1447,15 @@ public sealed class BoardView : FrameworkElement
         {
             var g = HitGizmo(pos);
             if (g == "ROT") { RotateComponent(Selected); InvalidateVisual(); return; }
-            if (g is "X" or "Y")
+            if (g == "ROTX") { TiltComponent(Selected, "X"); InvalidateVisual(); return; }
+            if (g == "ROTY") { TiltComponent(Selected, "Y"); InvalidateVisual(); return; }
+            if (g is "X" or "Y" or "Z")
             {
                 _gizmoAxis = g;
                 _gizmoStart = Unproject(pos);
                 _gizmoOrig = (Selected.X, Selected.Y);
+                _gizmoStartMouse = pos;
+                _gizmoStartZ = Selected.Z;
                 InvalidateVisual();
                 return;
             }
@@ -1484,6 +1556,11 @@ public sealed class BoardView : FrameworkElement
             _potDrag.Props["value"] = v.ToString();
             InvalidateVisual();
         }
+        else if (_gizmoAxis == "Z" && Selected != null && e.LeftButton == MouseButtonState.Pressed)
+        {
+            Selected.Z = Math.Clamp(_gizmoStartZ + (_gizmoStartMouse.Y - pos.Y) / 16.0, 0, 12);
+            InvalidateVisual();
+        }
         else if (_gizmoAxis != null && Selected != null && e.LeftButton == MouseButtonState.Pressed)
         {
             var (wx, wy) = Unproject(pos);
@@ -1511,6 +1588,13 @@ public sealed class BoardView : FrameworkElement
         else if (_panning && e.LeftButton == MouseButtonState.Pressed)
         {
             Pan = new Point(Pan.X + pos.X - _lastMouse.X, Pan.Y + pos.Y - _lastMouse.Y);
+            InvalidateVisual();
+        }
+        else if (_dragComp != null && e.LeftButton == MouseButtonState.Pressed &&
+                 (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        {
+            // Shift + тащить: деталь едет вверх/вниз по оси Z
+            _dragComp.Z = Math.Clamp(_dragComp.Z - (pos.Y - _lastMouse.Y) / 16.0, 0, 12);
             InvalidateVisual();
         }
         else if (_dragComp != null && e.LeftButton == MouseButtonState.Pressed)
