@@ -106,28 +106,50 @@ public sealed class BoardView : FrameworkElement
         double dx = ux - cx, dy = uy - cy;
         double xr = dx * Math.Cos(a) - dy * Math.Sin(a);
         double yr = dx * Math.Sin(a) + dy * Math.Cos(a);
-        double w = xr + yr + 2 * Tilt * wz; // глубина точки от камеры
-        double persp = UsePerspective ? 95.0 / (95.0 + w) : 1.0;
-        double sx = ActualWidth / 2 + Pan.X + (xr - yr) * Cell * Zoom * persp;
-        double sy = ActualHeight / 2 + Pan.Y + ((xr + yr) * Tilt - wz) * Cell * Zoom * persp;
-        return (new Point(sx, sy), w);
+        if (!UsePerspective)
+        {
+            // классическая изометрия (запасной режим)
+            double w = xr + yr + 2 * Tilt * wz;
+            return (new Point(
+                ActualWidth / 2 + Pan.X + (xr - yr) * Cell * Zoom,
+                ActualHeight / 2 + Pan.Y + ((xr + yr) * Tilt - wz) * Cell * Zoom), w);
+        }
+        // Настоящий 3D: поворот по азимуту -> подъём камеры -> деление на глубину.
+        double el = Math.Atan(Math.Max(Tilt, 0.14));
+        double sinE = Math.Sin(el), cosE = Math.Cos(el);
+        double xv = xr;                                   // вправо от камеры
+        double yv = wz * cosE - yr * sinE;                // вверх от камеры
+        double zv = wz * sinE + yr * cosE + 70.0;         // глубина (камера в 70 клетках)
+        double f = Cell * Zoom * 90.0;                    // фокус
+        return (new Point(
+            ActualWidth / 2 + Pan.X + xv * f / zv,
+            ActualHeight / 2 + Pan.Y - yv * f / zv), zv);
     }
 
-    public (double, double) Unproject(Point s)
+    public (double, double) Unproject(Point s) =>
+        UsePerspective ? UnprojectPerspective(s) : UnprojectLinear(s, 1.0);
+
+    private (double, double) UnprojectPerspective(Point s)
     {
-        // перспектива нелинейна — уточняем масштаб тремя итерациями
-        var r = UnprojectLinear(s, 1.0);
-        for (int i = 0; i < 3; i++)
-        {
-            var (ux, uy) = RotateBoardPoint(r.Item1, r.Item2);
-            double a = CameraAngle * Math.PI / 180.0;
-            double dx = ux - Data.Cols / 2.0, dy = uy - Data.Rows / 2.0;
-            double xr = dx * Math.Cos(a) - dy * Math.Sin(a);
-            double yr = dx * Math.Sin(a) + dy * Math.Cos(a);
-            double persp = UsePerspective ? 95.0 / (95.0 + xr + yr) : 1.0;
-            r = UnprojectLinear(s, persp);
-        }
-        return r;
+        double el = Math.Atan(Math.Max(Tilt, 0.14));
+        double sinE = Math.Sin(el);
+        double f = Cell * Zoom * 90.0;
+        double mx = s.X - ActualWidth / 2 - Pan.X;
+        double my = s.Y - ActualHeight / 2 - Pan.Y;
+        double zv = 70.0 / Math.Max(0.2, 1 - my / (f * Math.Tan(el)));
+        double xr = mx * zv / f;
+        double yr = my * zv / (f * sinE);
+        double a = CameraAngle * Math.PI / 180.0;
+        double dx = xr * Math.Cos(a) + yr * Math.Sin(a);
+        double dy = -xr * Math.Sin(a) + yr * Math.Cos(a);
+        double ux = dx + Data.Cols / 2.0, uy = dy + Data.Rows / 2.0;
+        if (ViewSide == "Bottom") ux = Data.Cols - ux;
+        double cx = Data.Cols / 2.0, cy = Data.Rows / 2.0;
+        double ra = -BoardRotDeg * Math.PI / 180.0;
+        double ddx = ux - cx, ddy = uy - cy;
+        double wx = cx + ddx * Math.Cos(ra) - ddy * Math.Sin(ra);
+        double wy = cy + ddx * Math.Sin(ra) + ddy * Math.Cos(ra);
+        return (wx, wy);
     }
 
     private (double, double) UnprojectLinear(Point s, double persp)
