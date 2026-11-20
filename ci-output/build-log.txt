@@ -29,27 +29,30 @@ Daemon will be stopped at the end of the build
 > Task :app:mergeDebugShaders
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:mergeDebugAssets
 > Task :app:processDebugManifestForPackage
+> Task :app:mergeDebugAssets
 > Task :app:compressDebugAssets
 > Task :app:desugarDebugFileDependencies
+> Task :app:processDebugResources
+> Task :app:checkDebugDuplicateClasses
 > Task :app:mergeDebugStartupProfile
 > Task :app:mergeDebugJniLibFolders
-> Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugNativeLibs NO-SOURCE
-> Task :app:processDebugResources
-> Task :app:mergeExtDexDebug
-> Task :app:stripDebugDebugSymbols NO-SOURCE
 > Task :app:mergeLibDexDebug
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:stripDebugDebugSymbols NO-SOURCE
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
-
-> Task :app:compileDebugKotlin
-e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:138:9 Function 'public' exposes its 'private-in-class' return type 'Vec'.
+> Task :app:mergeExtDexDebug
 
 > Task :app:compileDebugKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795167790742.json
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:40:5 Accidental override: The following declarations have the same JVM signature (getElevation()F):
+    fun `<get-elevation>`(): Float defined in com.belopus.connect.Scene3DView
+    fun getElevation(): Float defined in com.belopus.connect.Scene3DView
+e: file:///home/runner/work/Connect/Connect/app/src/main/java/com/belopus/connect/Scene3DView.kt:40:5 Accidental override: The following declarations have the same JVM signature (setElevation(F)V):
+    fun `<set-elevation>`(`<set-?>`: Float): Unit defined in com.belopus.connect.Scene3DView
+    fun setElevation(p0: Float): Unit defined in com.belopus.connect.Scene3DView
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795167909713.json
 
 FAILURE: Build failed with an exception.
 
@@ -311,5 +314,5 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	... 2 more
 
 
-BUILD FAILED in 1m 20s
+BUILD FAILED in 1m 6s
 27 actionable tasks: 27 executed
