@@ -72,5 +72,6 @@ jobs:
             echo "Nothing to commit"
           else
             git commit -m "CI: build results (APK + log) [skip ci]"
+            git pull --rebase origin "${{ github.ref_name }}" || true
             git push origin HEAD:${{ github.ref_name }}
           fi

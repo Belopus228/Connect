@@ -15,6 +15,22 @@ object AppState {
     var mode: String = "move" // move | wire | solder | delete | sim | camera
     var board3d: Boolean = true
     var showCaseIn3D: Boolean = false
+    // настройки паяльника
+    var solderTempC: Int = 350
+    var useFlux: Boolean = true
+
+    fun solderQuality(tempC: Int = solderTempC, flux: Boolean = useFlux): String = when {
+        tempC > 430 -> "hot"
+        tempC < 280 -> "cold"
+        tempC < 315 && !flux -> "cold"
+        else -> "good"
+    }
+
+    fun solderQualityText(q: String): String = when (q) {
+        "cold" -> "🥶 ХОЛОДНАЯ пайка: тусклая, ненадёжная. Поднимите температуру до 320–380°C и включите флюс."
+        "hot" -> "🔥 ПЕРЕГРЕВ: плата подгорает, дорожка может отслоиться. Снизьте до 320–380°C."
+        else -> "✨ Хорошая пайка: блестящий гладкий наплыв припоя."
+    }
     var caseModel: StlModel? = null
     var casePresetName: String = ""
 
@@ -110,6 +126,14 @@ object AppState {
         }
         running = true
         runner?.stop()
+        project.wires.filter { it.style == "solder" && it.quality != "good" }.forEach { w ->
+            val a = compById(w.aComp)?.def()?.title ?: "?"
+            val b = compById(w.bComp)?.def()?.title ?: "?"
+            log(
+                if (w.quality == "cold") "🥶 Холодная пайка $a.${w.aPin}—$b.${w.bPin} (${w.tempC}°C): контакт ненадёжен! Перепаяйте при 320–380°C с флюсом (вкладка «Инструменты»)."
+                else "🔥 Перегретая пайка $a.${w.aPin}—$b.${w.bPin} (${w.tempC}°C): поджог платы, дорожка может отслоиться. Перепаяйте при 320–380°C."
+            )
+        }
         runner = FirmwareRunner(project.firmwareCode)
         val c = CircuitSim.compute()
         if (c.espPowered.isEmpty()) {
@@ -163,6 +187,7 @@ object AppState {
                 val j = JSONObject()
                 j.put("id", w.id); j.put("a", w.aComp); j.put("ap", w.aPin)
                 j.put("b", w.bComp); j.put("bp", w.bPin); j.put("s", w.style); j.put("c", w.color)
+                j.put("q", w.quality); j.put("t", w.tempC); j.put("f", w.flux)
                 wa.put(j)
             }
             o.put("wires", wa)
@@ -217,7 +242,8 @@ object AppState {
                     Wire(
                         id = j.optString("id"), aComp = j.optString("a"), aPin = j.optString("ap"),
                         bComp = j.optString("b"), bPin = j.optString("bp"),
-                        style = j.optString("s", "wire"), color = j.optInt("c", 0xFFD32F2F.toInt())
+                        style = j.optString("s", "wire"), color = j.optInt("c", 0xFFD32F2F.toInt()),
+                        quality = j.optString("q", "good"), tempC = j.optInt("t", 350), flux = j.optBoolean("f", true)
                     )
                 )
             }

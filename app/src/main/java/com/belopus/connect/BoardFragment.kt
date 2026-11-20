@@ -14,6 +14,7 @@ import android.widget.CheckBox
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
@@ -331,6 +332,49 @@ class BoardFragment : Fragment() {
             text = "Камера: палец — вращение, щипок — зум. Провод/Паять: коснитесь пина на модели → коснитесь второго. В «Нажимать» кнопки на плате живые."
             textSize = 10f; setTextColor(Color.parseColor("#94A3B8"))
         })
+
+        // --- паяльник: температура и флюс определяют качество и вид пайки ---
+        val solderCard = section(toolsTab, "🔥 ПАЯЛЬНИК И ПРИПОЙ")
+        val solderTempLabel = TextView(requireContext()).apply {
+            textSize = 12f; setTextColor(Color.WHITE)
+        }
+        val solderQualityLabel = TextView(requireContext()).apply {
+            textSize = 10f; setPadding(0, dp(3), 0, dp(4))
+        }
+        fun refreshSolderLabels() {
+            solderTempLabel.text = "Температура жала: ${AppState.solderTempC}°C  •  флюс: ${if (AppState.useFlux) "да" else "нет"}"
+            val q = AppState.solderQuality()
+            solderQualityLabel.text = AppState.solderQualityText(q) +
+                "\nТак будут выглядеть и вести себя все новые паяные соединения: блестящий наплыв, тусклая треснувшая «холодная» или поджог при перегреве."
+            solderQualityLabel.setTextColor(
+                Color.parseColor(when (q) { "cold" -> "#93C5FD"; "hot" -> "#FCA5A5"; else -> "#86EFAC" })
+            )
+        }
+        solderCard.addView(solderTempLabel)
+        solderCard.addView(SeekBar(requireContext()).apply {
+            max = 280 // 200..480°C
+            progress = (AppState.solderTempC - 200).coerceIn(0, 280)
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar?, value: Int, fromUser: Boolean) {
+                    if (!fromUser) return
+                    AppState.solderTempC = 200 + value
+                    refreshSolderLabels()
+                }
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            })
+        })
+        solderCard.addView(CheckBox(requireContext()).apply {
+            text = "Использовать флюс (гель/паста)"
+            textSize = 11f; setTextColor(Color.WHITE)
+            isChecked = AppState.useFlux
+            setOnCheckedChangeListener { _, checked ->
+                AppState.useFlux = checked
+                refreshSolderLabels()
+            }
+        })
+        solderCard.addView(solderQualityLabel)
+        refreshSolderLabels()
 
         val viewCard = section(toolsTab, "👁 ВИД, КАМЕРА И ПЛАТА")
         val viewRow = LinearLayout(requireContext()).apply { orientation = LinearLayout.HORIZONTAL }

@@ -87,16 +87,29 @@ class CircuitView @JvmOverloads constructor(
             val (x2, y2) = pinXY(b, pb)
             if (w.style == "solder") {
                 paint.style = Paint.Style.STROKE
-                paint.strokeWidth = cell * 0.22f
-                paint.color = Color.parseColor("#C0C0C0")
+                paint.strokeCap = Paint.Cap.ROUND
+                paint.strokeJoin = Paint.Join.ROUND
                 val path = Path()
                 path.moveTo(x1, y1)
                 path.lineTo(x2, y1)
                 path.lineTo(x2, y2)
+                if (w.quality == "hot") {
+                    paint.strokeWidth = cell * 0.34f
+                    paint.color = Color.argb(130, 62, 39, 35)
+                    canvas.drawPath(path, paint)
+                }
+                paint.strokeWidth = cell * 0.22f
+                paint.color = when (w.quality) {
+                    "cold" -> Color.parseColor("#7d838a")
+                    "hot" -> Color.parseColor("#5f564e")
+                    else -> Color.parseColor("#B9C2C9")
+                }
                 canvas.drawPath(path, paint)
-                paint.color = Color.parseColor("#78909C")
-                paint.strokeWidth = cell * 0.08f
-                canvas.drawPath(path, paint)
+                if (w.quality == "good") {
+                    paint.color = Color.parseColor("#F4F8FA")
+                    paint.strokeWidth = cell * 0.07f
+                    canvas.drawPath(path, paint)
+                }
             } else {
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = cell * 0.18f
@@ -107,14 +120,37 @@ class CircuitView @JvmOverloads constructor(
                 path.cubicTo(x1, midY, x2, midY, x2, y2)
                 canvas.drawPath(path, paint)
             }
-            // точки пайки
+            // наплывы припоя: флюс, купол с бликом, трещины холодной и поджог перегретой
             paint.style = Paint.Style.FILL
-            paint.color = Color.parseColor("#ECEFF1")
-            canvas.drawCircle(x1, y1, cell * 0.20f, paint)
-            canvas.drawCircle(x2, y2, cell * 0.20f, paint)
-            paint.color = Color.parseColor("#90A4AE")
-            canvas.drawCircle(x1, y1, cell * 0.10f, paint)
-            canvas.drawCircle(x2, y2, cell * 0.10f, paint)
+            for ((jx, jy) in listOf(x1 to y1, x2 to y2)) {
+                if (w.flux) {
+                    paint.color = Color.argb(55, 217, 164, 65)
+                    canvas.drawCircle(jx, jy, cell * 0.42f, paint)
+                }
+                if (w.quality == "hot") {
+                    paint.color = Color.argb(130, 62, 39, 35)
+                    canvas.drawCircle(jx, jy, cell * 0.30f, paint)
+                }
+                paint.color = when (w.quality) {
+                    "cold" -> Color.parseColor("#878E96")
+                    "hot" -> Color.parseColor("#6E6259")
+                    else -> Color.parseColor("#DDE5EA")
+                }
+                canvas.drawCircle(jx, jy, cell * 0.23f, paint)
+                if (w.quality == "cold") {
+                    paint.style = Paint.Style.STROKE
+                    paint.color = Color.parseColor("#37474F")
+                    paint.strokeWidth = 1.4f
+                    canvas.drawLine(jx - cell * 0.14f, jy - cell * 0.08f, jx + cell * 0.10f, jy + cell * 0.12f, paint)
+                    canvas.drawLine(jx + cell * 0.13f, jy - cell * 0.13f, jx - cell * 0.09f, jy + cell * 0.05f, paint)
+                    paint.style = Paint.Style.FILL
+                } else {
+                    paint.color = Color.WHITE
+                    canvas.drawCircle(jx - cell * 0.07f, jy - cell * 0.08f, cell * 0.055f, paint)
+                }
+                paint.color = Color.parseColor("#90A4AE")
+                canvas.drawCircle(jx, jy, cell * 0.07f, paint)
+            }
         }
 
         // ожидающий пин
@@ -328,12 +364,14 @@ class CircuitView @JvmOverloads constructor(
                                         aComp = pending.first.id, aPin = pending.second.name,
                                         bComp = hitP.first.id, bPin = hitP.second.name,
                                         style = if (AppState.mode == "solder") "solder" else "wire",
-                                        color = if (AppState.mode == "solder") 0xFF90A4AE.toInt() else color
+                                        color = if (AppState.mode == "solder") 0xFF90A4AE.toInt() else color,
+                                        quality = if (AppState.mode == "solder") AppState.solderQuality() else "good",
+                                        tempC = AppState.solderTempC, flux = AppState.useFlux
                                     )
                                 )
                                 AppState.log(
                                     if (AppState.mode == "solder")
-                                        "🔥 Припаяно: ${pending.first.def().title}.${pending.second.name} — ${hitP.first.def().title}.${hitP.second.name} (дорожка+припой)"
+                                        "🔥 Припаяно при ${AppState.solderTempC}°C: ${pending.first.def().title}.${pending.second.name} — ${hitP.first.def().title}.${hitP.second.name}. ${AppState.solderQualityText(AppState.solderQuality())}"
                                     else
                                         "🔌 Провод: ${pending.first.def().title}.${pending.second.name} — ${hitP.first.def().title}.${hitP.second.name}"
                                 )

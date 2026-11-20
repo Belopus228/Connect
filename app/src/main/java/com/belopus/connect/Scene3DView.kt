@@ -271,10 +271,13 @@ class Scene3DView @JvmOverloads constructor(
         paint.color = Color.parseColor("#0F1B24")
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
-        val faces = mutableListOf<Face>()
+        val boardFaces = mutableListOf<Face>()
+        val compFaces = mutableListOf<Face>()
+        val jointFaces = mutableListOf<Face>()
+        val caseFaces = mutableListOf<Face>()
 
         // плата (3D-плита)
-        addBox(faces, 0f, 0f, -1.6f, boardW(), boardD(), 1.6f, Color.parseColor("#14532D"))
+        addBox(boardFaces, 0f, 0f, -1.6f, boardW(), boardD(), 1.6f, Color.parseColor("#14532D"))
 
         // STL-корпус в той же 3D-сцене
         if (AppState.showCaseIn3D) {
@@ -290,7 +293,7 @@ class Scene3DView @JvmOverloads constructor(
                     val pts = (0 until 3).map { k ->
                         Vec(t.v[k * 3] + offX, t.v[k * 3 + 1] + offY, t.v[k * 3 + 2] + offZ)
                     }
-                    faces.add(Face(pts, Color.parseColor("#90CAF9"), 70))
+                    caseFaces.add(Face(pts, Color.parseColor("#90CAF9"), 70))
                     i += stride
                 }
             }
@@ -299,7 +302,10 @@ class Scene3DView @JvmOverloads constructor(
         // компоненты — детализированные модели (как настоящие детали)
         for (c in proj.components) {
             val def = c.def()
-            val (x, y, w, d) = compWorld(c)
+            val faces = mutableListOf<Face>()
+            // локальные координаты исходной (неповёрнутой) детали — модель поворачивается вся целиком ниже
+            val x = 0f; val y = 0f
+            val w = def.wGrid * 2.54f; val d = def.hGrid * 2.54f
             val pcb = 1.6f // толщина печатной платы модулей
             when (c.typeId) {
                 "esp32" -> {
@@ -444,37 +450,58 @@ class Scene3DView @JvmOverloads constructor(
             // штыревые выводы модулей: золотые штыри на гребёнках
             if (c.typeId in listOf("esp32", "oled", "tft", "tft18", "lcd1602", "nrf24", "dht22", "relay", "servo")) {
                 for (pin in def.pins) {
-                    val pw = pinWorld(c, pin)
-                    addCylinderZ(faces, pw.x, pw.y, 1.2f, 0.55f, (pinZ(c) - 1.2f).coerceAtLeast(0.6f), Color.parseColor("#FFD54F"), 255, 8)
+                    addCylinderZ(faces, pin.dx * 2.54f + 1.27f, pin.dy * 2.54f + 1.27f, 1.2f, 0.55f, (pinZ(c) - 1.2f).coerceAtLeast(0.6f), Color.parseColor("#FFD54F"), 255, 8)
                 }
             }
         }
 
-        // глубина и отрисовка граней (алгоритм художника)
-        val light = norm(Vec(-0.45f, -0.55f, 0.75f))
-        for (f in faces) {
-            f.depth = f.pts.map { project(it, cam).depth }.average().toFloat()
-        }
-        faces.sortByDescending { it.depth }
-        for (f in faces) {
-            val scr = f.pts.map { project(it, cam) }
-            val path = Path()
-            scr.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
-            path.close()
-            val n = if (f.pts.size >= 3) norm(cross(f.pts[1] - f.pts[0], f.pts[2] - f.pts[1])) else Vec(0f, 0f, 1f)
-            val factor = 0.45f + 0.55f * abs(dot(n, light))
-            paint.style = Paint.Style.FILL
-            paint.color = shade(f.color, factor)
-            paint.alpha = f.alpha
-            canvas.drawPath(path, paint)
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 0.7f
-            paint.color = Color.argb(55, 0, 0, 0)
-            paint.alpha = f.alpha
-            canvas.drawPath(path, paint)
-            paint.alpha = 255
+            // поворот модели целиком (иначе при повороте детали USB/экран/цилиндры оставались по-старому)
+            val rot = ((c.rotation % 360) + 360) % 360
+            val oxw = c.gridX * 2.54f; val oyw = c.gridY * 2.54f
+            val w0 = def.wGrid * 2.54f; val d0 = def.hGrid * 2.54f
+            for (f in faces) {
+                val pts = f.pts.map { v ->
+                    val (rx, ry) = when (rot) {
+                        90 -> (d0 - v.y) to v.x
+                        180 -> (w0 - v.x) to (d0 - v.y)
+                        270 -> v.y to (w0 - v.x)
+                        else -> v.x to v.y
+                    }
+                    Vec(oxw + rx, oyw + ry, v.z)
+                }
+                compFaces.add(Face(pts, f.color, f.alpha))
+            }
         }
 
+        // наплывы припоя на каждом соединении (купола припоя + флюс/поджог по качеству)
+        for (wire in proj.wires) {
+            for ((cid, pname) in listOf(wire.aComp to wire.aPin, wire.bComp to wire.bPin)) {
+                val comp = AppState.compById(cid) ?: continue
+                val pin = comp.def().pins.firstOrNull { it.name == pname } ?: continue
+                val pw = pinWorld(comp, pin)
+                if (wire.flux) {
+                    addCylinderZ(jointFaces, pw.x, pw.y, 0.10f, 2.7f, 0.16f, Color.parseColor("#D9A441"), 60, 16)
+                }
+                if (wire.quality == "hot") {
+                    addCylinderZ(jointFaces, pw.x, pw.y, 0.12f, 2.2f, 0.14f, Color.parseColor("#4E342E"), 120, 16)
+                }
+                val solderColor = when (wire.quality) {
+                    "cold" -> Color.parseColor("#878E96")
+                    "hot" -> Color.parseColor("#6E6259")
+                    else -> Color.parseColor("#EDF2F5")
+                }
+                addCylinderZ(jointFaces, pw.x, pw.y, 0.15f, 1.55f, 0.55f, solderColor, 235, 14)
+                addDome(jointFaces, pw.x, pw.y, 0.70f, 1.45f, solderColor, 245)
+            }
+        }
+
+        // отрисовка слоями: плата → модели → припой → (полупрозрачный) корпус.
+        // Раньше всё сортировалось одним списком по глубине, и большая грань платы
+        // перекрывала экраны/чипы дальних модулей — это и был баг отображения модулей.
+        drawFaces(canvas, boardFaces, cam)
+        drawFaces(canvas, compFaces, cam)
+        drawFaces(canvas, jointFaces, cam)
+        drawFaces(canvas, caseFaces, cam)
         // отверстия платы (не под компонентами)
         paint.style = Paint.Style.FILL
         for (gy in 0 until proj.boardRows) {
@@ -527,18 +554,63 @@ class Scene3DView @JvmOverloads constructor(
             val scrPts = pts3.map { project(it, cam) }
             val path = Path()
             scrPts.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
-            paint.style = Paint.Style.STROKE
-            paint.color = if (w.style == "solder") Color.parseColor("#C0C0C0") else w.color
             val avgScale = scrPts.map { it.scale }.average().toFloat()
-            paint.strokeWidth = (if (w.style == "solder") 0.9f else 0.55f) * avgScale.coerceIn(2f, 9f)
-            canvas.drawPath(path, paint)
-            // точки пайки
+            paint.style = Paint.Style.STROKE
+            paint.strokeCap = Paint.Cap.ROUND
+            paint.strokeJoin = Paint.Join.ROUND
+            if (w.style == "solder") {
+                // перегрев: тёмный подтёк под дорожкой
+                if (w.quality == "hot") {
+                    paint.color = Color.argb(130, 62, 39, 35)
+                    paint.strokeWidth = 1.5f * avgScale.coerceIn(2f, 9f)
+                    canvas.drawPath(path, paint)
+                }
+                // тело дорожки припоя
+                paint.color = when (w.quality) {
+                    "cold" -> Color.parseColor("#7d838a")
+                    "hot" -> Color.parseColor("#5f564e")
+                    else -> Color.parseColor("#B9C2C9")
+                }
+                paint.strokeWidth = 0.95f * avgScale.coerceIn(2f, 9f)
+                canvas.drawPath(path, paint)
+                // блестящий блик по центру (только у хорошей пайки)
+                if (w.quality == "good") {
+                    paint.color = Color.parseColor("#F4F8FA")
+                    paint.strokeWidth = 0.34f * avgScale.coerceIn(2f, 9f)
+                    canvas.drawPath(path, paint)
+                }
+            } else {
+                paint.color = w.color
+                paint.strokeWidth = 0.55f * avgScale.coerceIn(2f, 9f)
+                canvas.drawPath(path, paint)
+            }
+            // блик/трещины на наплывах припоя по концам
             paint.style = Paint.Style.FILL
             for (p in listOf(scrPts.first(), scrPts.last())) {
-                paint.color = Color.parseColor("#ECEFF1")
-                canvas.drawCircle(p.x, p.y, (0.85f * p.scale).coerceIn(2.5f, 9f), paint)
-                paint.color = Color.parseColor("#90A4AE")
-                canvas.drawCircle(p.x, p.y, (0.4f * p.scale).coerceIn(1.2f, 4.5f), paint)
+                val jr = (1.15f * p.scale).coerceIn(3f, 11f)
+                // проецируем основание наплыва (у платы), а не верх штыря
+                val basePts = listOf(va, vb).map { project(Vec(it.x, it.y, 0.9f), cam) }
+                for (bp in basePts) {
+                    when (w.quality) {
+                        "cold" -> {
+                            paint.style = Paint.Style.STROKE
+                            paint.color = Color.parseColor("#37474F")
+                            paint.strokeWidth = 1.4f
+                            canvas.drawLine(bp.x - jr * 0.55f, bp.y - jr * 0.3f, bp.x + jr * 0.4f, bp.y + jr * 0.45f, paint)
+                            canvas.drawLine(bp.x + jr * 0.5f, bp.y - jr * 0.5f, bp.x - jr * 0.35f, bp.y + jr * 0.2f, paint)
+                            paint.style = Paint.Style.FILL
+                        }
+                        "hot" -> {
+                            paint.color = Color.argb(90, 255, 255, 255)
+                            canvas.drawCircle(bp.x - jr * 0.3f, bp.y - jr * 0.35f, jr * 0.22f, paint)
+                        }
+                        else -> {
+                            paint.color = Color.WHITE
+                            canvas.drawCircle(bp.x - jr * 0.32f, bp.y - jr * 0.38f, jr * 0.26f, paint)
+                        }
+                    }
+                }
+                break
             }
         }
 
@@ -665,6 +737,34 @@ class Scene3DView @JvmOverloads constructor(
         canvas.drawText("🧊 3D • режим «Камера»: ведите палец — вращение, щипок — зум$caseHint", 12f, 26f, paint)
     }
 
+    /** Отрисовка одного слоя граней алгоритмом художника (дальние — первыми). */
+    private fun drawFaces(canvas: Canvas, list: MutableList<Face>, cam: Cam) {
+        val light = norm(Vec(-0.45f, -0.55f, 0.75f))
+        for (f in list) {
+            f.depth = f.pts.map { project(it, cam).depth }.average().toFloat()
+        }
+        list.sortByDescending { it.depth }
+        for (f in list) {
+            val scr = f.pts.map { project(it, cam) }
+            val path = Path()
+            scr.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
+            path.close()
+            val n = if (f.pts.size >= 3) norm(cross(f.pts[1] - f.pts[0], f.pts[2] - f.pts[1])) else Vec(0f, 0f, 1f)
+            val factor = 0.45f + 0.55f * abs(dot(n, light))
+            paint.style = Paint.Style.FILL
+            paint.color = shade(f.color, factor)
+            paint.alpha = f.alpha
+            canvas.drawPath(path, paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 0.7f
+            paint.color = Color.argb(55, 0, 0, 0)
+            paint.alpha = f.alpha
+            canvas.drawPath(path, paint)
+            paint.alpha = 255
+        }
+        paint.style = Paint.Style.FILL
+    }
+
     // ---------------- касания ----------------
 
     fun hitPin(sx: Float, sy: Float): Pair<PlacedComponent, PinDef>? {
@@ -730,10 +830,15 @@ class Scene3DView @JvmOverloads constructor(
                                         aComp = pending.first.id, aPin = pending.second.name,
                                         bComp = hitP.first.id, bPin = hitP.second.name,
                                         style = if (AppState.mode == "solder") "solder" else "wire",
-                                        color = if (AppState.mode == "solder") 0xFF90A4AE.toInt() else colors[AppState.project.wires.size % colors.size]
+                                        color = if (AppState.mode == "solder") 0xFF90A4AE.toInt() else colors[AppState.project.wires.size % colors.size],
+                                        quality = if (AppState.mode == "solder") AppState.solderQuality() else "good",
+                                        tempC = AppState.solderTempC, flux = AppState.useFlux
                                     )
                                 )
-                                AppState.log("${if (AppState.mode == "solder") "🔥 Припаяно" else "🔌 Провод"}: ${pending.first.def().title}.${pending.second.name} — ${hitP.first.def().title}.${hitP.second.name}")
+                                AppState.log(
+                                    if (AppState.mode == "solder") "🔥 Припаяно при ${AppState.solderTempC}°C: ${pending.first.def().title}.${pending.second.name} — ${hitP.first.def().title}.${hitP.second.name}. ${AppState.solderQualityText(AppState.solderQuality())}"
+                                    else "🔌 Провод: ${pending.first.def().title}.${pending.second.name} — ${hitP.first.def().title}.${hitP.second.name}"
+                                )
                                 pendingPin = null
                                 AppState.notifyChanged()
                             }

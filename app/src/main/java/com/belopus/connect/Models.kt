@@ -54,7 +54,11 @@ data class Wire(
     var bComp: String = "",
     var bPin: String = "",
     var style: String = "wire", // wire | solder
-    var color: Int = 0xFFD32F2F.toInt()
+    var color: Int = 0xFFD32F2F.toInt(),
+    /** Качество пайки: good (блестящая) | cold (холодная, тусклая) | hot (перегрев, поджог платы) */
+    var quality: String = "good",
+    var tempC: Int = 350,
+    var flux: Boolean = true
 )
 
 data class Project(
