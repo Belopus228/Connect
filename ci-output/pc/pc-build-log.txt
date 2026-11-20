@@ -1,6 +1,6 @@
   Determining projects to restore...
-  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 10.42 sec).
+  Restored D:\a\Connect\Connect\pc\ConnectPC.csproj (in 7.43 sec).
   ConnectPC -> D:\a\Connect\Connect\pc\bin\Release\net8.0-windows\win-x64\ConnectPC.dll
   ConnectPC -> D:\a\Connect\Connect\pc-out\
 PUBLISH_EXIT=0
-EXE_SIZE_BYTES=71678979
+EXE_SIZE_BYTES=71678978
