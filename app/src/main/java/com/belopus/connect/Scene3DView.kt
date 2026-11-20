@@ -453,7 +453,6 @@ class Scene3DView @JvmOverloads constructor(
                     addCylinderZ(faces, pin.dx * 2.54f + 1.27f, pin.dy * 2.54f + 1.27f, 1.2f, 0.55f, (pinZ(c) - 1.2f).coerceAtLeast(0.6f), Color.parseColor("#FFD54F"), 255, 8)
                 }
             }
-        }
 
             // поворот модели целиком (иначе при повороте детали USB/экран/цилиндры оставались по-старому)
             val rot = ((c.rotation % 360) + 360) % 360
