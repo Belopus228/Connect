@@ -36,7 +36,7 @@ public partial class MainWindow : Window
             if (EspPinsList != null) RefreshEspPins();
         };
         ShowPanel("tutorial");
-        Log("✅ Connect v2.3 — нативная Windows-сборка открыта");
+        Log("✅ Connect v2.4 — нативная Windows-сборка открыта");
         Log("🎓 Открыт туториал: пройдите шаги слева, чтобы освоить интерфейс.");
         Log("Перетаскивайте детали из меню «＋ Добавить» на плату мышкой.");
         RefreshState();

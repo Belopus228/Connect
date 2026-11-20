@@ -45,6 +45,12 @@ public sealed class BoardView : FrameworkElement
 
     private static readonly string[] WireColors = { "#d32f2f", "#ff6f00", "#f9a825", "#2e7d32", "#1565c0", "#6a1b9a", "#00838f" };
 
+    public BoardView()
+    {
+        // 3D-сцена не должна вылезать за пределы своей области и перекрывать GUI
+        ClipToBounds = true;
+    }
+
     public string SolderQuality() =>
         SolderTempC > 430 ? "hot" : (SolderTempC < 280 || (SolderTempC < 315 && !UseFlux)) ? "cold" : "good";
 
@@ -200,6 +206,7 @@ public sealed class BoardView : FrameworkElement
         base.OnRender(dc);
         dc.DrawRectangle(Brush("#0f1b24"), null, new Rect(0, 0, ActualWidth, ActualHeight));
         if (Data == null) return;
+        dc.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
         var state = Circuit.Compute(Data);
         bool bottom = ViewSide == "Bottom";
         DrawCaseBack(dc);
@@ -280,6 +287,7 @@ public sealed class BoardView : FrameworkElement
         DrawLabels(dc, state, bottom);
         // замеры
         DrawMeasurements(dc);
+        dc.Pop();
     }
 
     // ================= 3D-меши компонентов =================
@@ -707,19 +715,51 @@ public sealed class BoardView : FrameworkElement
         if (fw.Points.Count < 2) return;
         bool activeSide = (fw.Side == "Top") != bottom;
         byte alpha = preview ? (byte)230 : activeSide ? (byte)255 : (byte)70;
-        double z = fw.Style == "solder" ? 0.14 : (fw.Side == "Bottom" ? 0.22 : 0.95);
-        var pts = fw.Points.Select(p => Project(p.X, p.Y, z)).ToArray();
-        if (fw.Style == "solder")
+        bool solder = fw.Style == "solder";
+        double baseZ = solder ? 0.13 : (fw.Side == "Bottom" ? 0.22 : 0.80);
+
+        // середина каждого звена чуть приподнята: провод пружинит, а не лежит плашмя
+        var path = new List<(double X, double Y, double Z)>();
+        for (int i = 0; i < fw.Points.Count; i++)
         {
-            if (fw.Quality == "hot")
-                DrawPolyline(dc, pts, PenOf("#3e2723", 6.5, (byte)(alpha * 0.55)));
-            string col = fw.Quality switch { "cold" => "#7d838a", "hot" => "#5f564e", _ => "#b9c2c9" };
-            var pen = PenOf(col, 3.6, alpha);
+            var pt = fw.Points[i];
+            path.Add((pt.X, pt.Y, baseZ));
+            if (i + 1 < fw.Points.Count)
+            {
+                var q = fw.Points[i + 1];
+                path.Add(((pt.X + q.X) / 2, (pt.Y + q.Y) / 2, baseZ + (solder ? 0.03 : 0.28)));
+            }
+        }
+        var pts = path.Select(p => Project(p.X, p.Y, p.Z)).ToArray();
+        var shadow = path.Select(p =>
+        {
+            var sh = Project(p.X, p.Y, 0.03);
+            return new Point(sh.X + 3.5, sh.Y + 4.5);
+        }).ToArray();
+
+        Pen RoundPen(string col, double wdt, byte a)
+        {
+            var pen = PenOf(col, wdt, a);
+            pen.LineJoin = PenLineJoin.Round;
+            pen.StartLineCap = PenLineCap.Round;
+            pen.EndLineCap = PenLineCap.Round;
             if (!activeSide && !preview) pen.DashStyle = DashStyles.Dash;
-            DrawPolyline(dc, pts, pen);
+            return pen;
+        }
+
+        // мягкая тень на текстолите
+        DrawPolyline(dc, shadow, RoundPen("#000000", solder ? 5.5 : 6.0, (byte)(alpha * 0.28)));
+
+        if (solder)
+        {
+            DrawPolyline(dc, pts, RoundPen("#6d4c41", 5.2, (byte)(alpha * 0.45)));  // ореол флюса/меди
+            string col = fw.Quality switch { "cold" => "#7d838a", "hot" => "#5f564e", _ => "#c3ccd2" };
+            DrawPolyline(dc, pts, RoundPen(col, 3.8, alpha));                         // лужёная жила
             if (fw.Quality == "good" && activeSide)
-                DrawPolyline(dc, pts, PenOf("#f4f8fa", 1.0, alpha));
-            // наплывы припоя: концы + редкие точки вдоль линии
+            {
+                var hl = pts.Select(p => new Point(p.X - 1.1, p.Y - 1.2)).ToArray();
+                DrawPolyline(dc, hl, RoundPen("#ffffff", 1.1, (byte)(alpha * 0.55))); // блик по припою
+            }
             for (int i = 0; i < fw.Points.Count; i += 5)
                 DrawSolderBlob(dc, Project(fw.Points[i].X, fw.Points[i].Y, 0.35), fw.Quality, fw.Flux, activeSide, alpha);
             var last = fw.Points[^1];
@@ -727,16 +767,34 @@ public sealed class BoardView : FrameworkElement
         }
         else
         {
-            DrawPolyline(dc, pts, PenOf("#000000", 4.4, (byte)(alpha * 0.35)));
-            var pen = PenOf(fw.Color, 2.7, alpha);
-            if (!activeSide && !preview) pen.DashStyle = DashStyles.Dash;
-            DrawPolyline(dc, pts, pen);
-            DrawPolyline(dc, pts, PenOf("#ffffff", 0.8, (byte)(alpha * 0.45)));
+            DrawPolyline(dc, pts, RoundPen("#101418", 4.8, (byte)(alpha * 0.55)));    // тёмный край изоляции
+            DrawPolyline(dc, pts, RoundPen(fw.Color, 3.1, alpha));                    // сама изоляция
+            var hl = pts.Select(p => new Point(p.X - 1.3, p.Y - 1.5)).ToArray();
+            DrawPolyline(dc, hl, RoundPen("#ffffff", 1.0, (byte)(alpha * 0.5)));      // блик по изоляции
+            // стыки звеньев — лёгкие утолщения, как у настоящего провода
+            foreach (var p in fw.Points.Skip(1).Take(Math.Max(0, fw.Points.Count - 2)))
+            {
+                var sp = Project(p.X, p.Y, baseZ);
+                dc.DrawEllipse(Brush(fw.Color, alpha), PenOf("#101418", 0.8, (byte)(alpha * 0.6)), sp, 3.1, 2.7);
+            }
+            // зачищенные концы — голая жила
+            DrawStrippedEnd(dc, pts[0], pts[1], alpha);
+            DrawStrippedEnd(dc, pts[^1], pts[^2], alpha);
         }
+    }
+
+    private void DrawStrippedEnd(DrawingContext dc, Point end, Point next, byte alpha)
+    {
+        var mid = new Point(end.X + (next.X - end.X) * 0.16, end.Y + (next.Y - end.Y) * 0.16);
+        var pen = PenOf("#d7dde3", 1.7, alpha);
+        pen.StartLineCap = PenLineCap.Round;
+        pen.EndLineCap = PenLineCap.Round;
+        dc.DrawLine(pen, end, mid);
     }
 
     private void DrawSolderBlob(DrawingContext dc, Point s, string quality, bool flux, bool activeSide, byte alpha)
     {
+        dc.DrawEllipse(Brush("#5f6b73", (byte)(alpha * 0.35)), null, s, 7.4, 5.8);
         if (flux) dc.DrawEllipse(Brush("#d9a441", (byte)(activeSide ? 55 : 22)), null, s, 8.5, 6);
         if (quality == "hot") dc.DrawEllipse(Brush("#3e2723", (byte)(activeSide ? 120 : 45)), null, s, 7, 5);
         string col = quality switch { "cold" => "#878e96", "hot" => "#6e6259", _ => "#dde5ea" };
@@ -797,7 +855,10 @@ public sealed class BoardView : FrameworkElement
                 g.PolyLineTo(pts, true, false);
             }
             geo.Freeze();
-            var pen = PenOf(w.Color, 2.6, alpha);
+            var pen = PenOf(w.Color, 2.9, alpha);
+            pen.LineJoin = PenLineJoin.Round;
+            pen.StartLineCap = PenLineCap.Round;
+            pen.EndLineCap = PenLineCap.Round;
             if (!activeSide) pen.DashStyle = DashStyles.Dash;
             dc.DrawGeometry(null, pen, geo);
         }
